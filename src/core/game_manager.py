@@ -1,7 +1,8 @@
 import pygame
 import sys
-from settings import *
-from engine.game_world import GameWorld
+
+from src.core.constants import *
+from src.core.game_world import GameWorld
 
 class GameManager:
     def __init__(self):
