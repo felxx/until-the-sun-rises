@@ -1,6 +1,6 @@
 import pygame
 import sys
-from settings import *
+from src.core.constants import *
 from engine.game_world import GameWorld
 
 class GameManager:
