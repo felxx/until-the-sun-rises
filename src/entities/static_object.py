@@ -1,4 +1,4 @@
-from src.entities.game_object import GameObject
+from src.core.game_object import GameObject
 import pygame
 
 class StaticObject(GameObject): 

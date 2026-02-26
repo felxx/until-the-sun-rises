@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 import pygame
 
 class GameObject(ABC):
-    def __init__(self, x, y): 
+    def __init__(self, x, y, color=(255, 255, 255)): 
         self.position = pygame.math.Vector2(float(x), float(y))
+        self.color = color
         self.active = True
 
     @abstractmethod
@@ -11,5 +12,5 @@ class GameObject(ABC):
         pass
 
     @abstractmethod
-    def draw(self, dt):
+    def draw(self, screen):
         pass
