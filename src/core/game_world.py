@@ -1,8 +1,9 @@
 import pygame
-import random 
+import random
+import math  # Adicionado para calcular o ângulo da lanterna
 from src.core.constants import *
 from src.entities.player_object import PlayerObject
-from src.entities.enemy_object import EnemyObject 
+from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 
 class GameWorld:
@@ -14,12 +15,18 @@ class GameWorld:
         self.shoot_timer = 0
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.light_radius = 350 
         
-        self.light_radius = 50
-        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2))
-        self.light_mask.fill((0, 0, 0))
-
-        pygame.draw.circle(self.light_mask, (255, 255, 255), (self.light_radius, self.light_radius), self.light_radius)
+        self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
+        
+        pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 60)
+        
+        cone_points = [
+            (self.light_radius, self.light_radius),
+            (self.light_radius * 2, self.light_radius - 140),
+            (self.light_radius * 2, self.light_radius + 140)          
+        ]
+        pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
 
     def spawn_enemy(self, dt):
         self.spawn_timer += dt
@@ -64,16 +71,23 @@ class GameWorld:
         
         for enemy in self.enemies:
             enemy.draw(screen)
-            
         for bullet in self.bullets:
             bullet.draw(screen)
             
         self.player.draw(screen)
+        
+        self.fog.fill((15, 15, 15))
+        
+        mouse_pos = pygame.mouse.get_pos()
+        dx = mouse_pos[0] - self.player.position.x
+        dy = mouse_pos[1] - self.player.position.y
+        
+        angle = math.degrees(math.atan2(-dy, dx))
+        
+        rotated_light = pygame.transform.rotate(self.base_light, angle)
+        
+        light_rect = rotated_light.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
+        
+        self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
 
-        self.fog.fill((15, 15, 15)) 
-        
-        light_rect = self.light_mask.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
-        
-        self.fog.blit(self.light_mask, light_rect, special_flags=pygame.BLEND_RGB_ADD)
-    
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
