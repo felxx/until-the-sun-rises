@@ -1,7 +1,9 @@
 import pygame
 import random
-import math  # Adicionado para calcular o ângulo da lanterna
+import math
+
 from src.core.constants import *
+from src.core.collision_manager import CollisionManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
@@ -27,6 +29,8 @@ class GameWorld:
             (self.light_radius * 2, self.light_radius + 140)          
         ]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
+        self.collision_manager = CollisionManager(
+            self.player, self.enemies, self.bullets)
 
     def spawn_enemy(self, dt):
         self.spawn_timer += dt
@@ -39,32 +43,17 @@ class GameWorld:
     def update(self, dt):
         self.player.update(dt)
         self.spawn_enemy(dt)
-        self.shoot_timer += dt
-        
+        self.handle_shoot(dt)
+
         for enemy in self.enemies:
             enemy.update(dt)
-
-        mouse_pressed = pygame.mouse.get_pressed()
-        if mouse_pressed[0] and self.shoot_timer >= 0.3:
-            self.shoot_timer = 0
-            mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
-            self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))
 
         for bullet in self.bullets[:]:
             bullet.update(dt)
             if bullet.is_off_screen():
-                if bullet in self.bullets:
-                    self.bullets.remove(bullet)
-                continue
+                self.bullets.remove(bullet)
 
-            for enemy in self.enemies[:]:
-                distance = bullet.position.distance_to(enemy.position)
-                if distance < (bullet.radius + enemy.radius):
-                    if bullet in self.bullets:
-                        self.bullets.remove(bullet)
-                    if enemy in self.enemies:
-                        self.enemies.remove(enemy)
-                    break 
+        self.collision_manager.update()
 
     def draw(self, screen):
         screen.fill(DARK_FILTER)
@@ -91,3 +80,12 @@ class GameWorld:
         self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
 
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
+
+    def handle_shoot(self, dt):
+        self.shoot_timer += dt
+        mouse_pressed = pygame.mouse.get_pressed()
+        if mouse_pressed[0] and self.shoot_timer >= 0.3:
+            self.shoot_timer = 0
+            mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
+            self.bullets.append(BulletObject(
+                self.player.position.x, self.player.position.y, mouse_pos))
