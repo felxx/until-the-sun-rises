@@ -1,19 +1,25 @@
 import pygame
-import random
+import random 
 from src.core.constants import *
 from src.entities.player_object import PlayerObject
-from src.entities.enemy_object import EnemyObject
+from src.entities.enemy_object import EnemyObject 
 from src.entities.bullet_object import BulletObject
-
 
 class GameWorld:
     def __init__(self):
-        self.player = PlayerObject(
-            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, 250, color=(0, 255, 0))
+        self.player = PlayerObject(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, 250, color=(0, 255, 0))
         self.enemies = []
         self.bullets = []
         self.spawn_timer = 0
         self.shoot_timer = 0
+        
+        self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        
+        self.light_radius = 50
+        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2))
+        self.light_mask.fill((0, 0, 0))
+
+        pygame.draw.circle(self.light_mask, (255, 255, 255), (self.light_radius, self.light_radius), self.light_radius)
 
     def spawn_enemy(self, dt):
         self.spawn_timer += dt
@@ -21,14 +27,13 @@ class GameWorld:
             self.spawn_timer = 0
             spawn_x = random.choice([-20, SCREEN_WIDTH + 20])
             spawn_y = random.randint(0, SCREEN_HEIGHT)
-            self.enemies.append(EnemyObject(
-                spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
+            self.enemies.append(EnemyObject(spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
 
     def update(self, dt):
         self.player.update(dt)
         self.spawn_enemy(dt)
         self.shoot_timer += dt
-
+        
         for enemy in self.enemies:
             enemy.update(dt)
 
@@ -36,12 +41,10 @@ class GameWorld:
         if mouse_pressed[0] and self.shoot_timer >= 0.3:
             self.shoot_timer = 0
             mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
-            self.bullets.append(BulletObject(
-                self.player.position.x, self.player.position.y, mouse_pos))
+            self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))
 
         for bullet in self.bullets[:]:
             bullet.update(dt)
-
             if bullet.is_off_screen():
                 if bullet in self.bullets:
                     self.bullets.remove(bullet)
@@ -54,15 +57,23 @@ class GameWorld:
                         self.bullets.remove(bullet)
                     if enemy in self.enemies:
                         self.enemies.remove(enemy)
-                    break
+                    break 
 
     def draw(self, screen):
         screen.fill(DARK_FILTER)
-
+        
         for enemy in self.enemies:
             enemy.draw(screen)
-
+            
         for bullet in self.bullets:
             bullet.draw(screen)
-
+            
         self.player.draw(screen)
+
+        self.fog.fill((15, 15, 15)) 
+        
+        light_rect = self.light_mask.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
+        
+        self.fog.blit(self.light_mask, light_rect, special_flags=pygame.BLEND_RGB_ADD)
+    
+        screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
