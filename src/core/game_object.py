@@ -6,11 +6,9 @@ class GameObject(ABC):
         self.position = pygame.math.Vector2(float(x), float(y))
         self.color = color
         self.active = True
+        self.image = None
+        self.rect = None
 
     @abstractmethod
     def update(self, dt):
-        pass
-
-    @abstractmethod
-    def draw(self, screen):
         pass

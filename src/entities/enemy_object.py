@@ -4,11 +4,15 @@ import pygame
 class EnemyObject(DynamicObject):
     def __init__(self, x, y, speed, color, radius, target):
         super().__init__(x, y, speed, color, radius)
-        self.target = target 
+        self.target = target
+
+        size = radius * 2
+        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, self.color, (radius, radius), radius)
+        self.rect = self.image.get_rect(center=(x, y))
 
     def resolve_behavior(self, dt):
         direction = self.target.position - self.position
-        
         if direction.length() > 0:
             self.velocity = direction 
         else:

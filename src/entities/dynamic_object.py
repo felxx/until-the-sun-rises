@@ -8,16 +8,16 @@ class DynamicObject(GameObject, ABC):
         self.velocity = pygame.math.Vector2(0, 0)
         self.speed = speed
         self.radius = radius
+        self.rect = pygame.Rect(0, 0, radius * 2, radius * 2)
+        self.rect.center = self.position
 
     def update(self, dt):
         self.resolve_behavior(dt)
         if self.velocity.length() > 0:
             self.velocity = self.velocity.normalize() * self.speed
-            
-        self.position += self.velocity * dt
 
-    def draw(self, screen):
-        pygame.draw.circle(screen, self.color, (int(self.position.x), int(self.position.y)), self.radius)
+        self.position += self.velocity * dt
+        self.rect.center = (int(self.position.x), int(self.position.y))
 
     @abstractmethod
     def resolve_behavior(self, dt):
