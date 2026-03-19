@@ -7,6 +7,11 @@ class PlayerObject(DynamicObject):
     def __init__(self, x, y, speed, color, radius=15):
         super().__init__(x, y, speed, color, radius)
 
+        self.max_health = 100
+        self.current_health = 100
+        self.is_alive = True
+        self.damage_timer = 0 
+
         self.frames = []
         for i in range(1, 10):
             path = f"assets/rifle{i}.png"
@@ -25,7 +30,20 @@ class PlayerObject(DynamicObject):
         self.image = self.original_image
         self.rect = self.image.get_rect(center=(x, y))
 
+    def take_damage(self, amount):
+        """Método para reduzir a vida do jogador"""
+        if self.is_alive:
+            self.current_health -= amount
+            self.damage_timer = 0.1 
+            if self.current_health <= 0:
+                self.current_health = 0
+                self.is_alive = False
+
     def resolve_behavior(self, dt):
+        if not self.is_alive:
+            self.velocity = pygame.math.Vector2(0, 0)
+            return
+
         keys = pygame.key.get_pressed()
         self.velocity.x = keys[pygame.K_d] - keys[pygame.K_a]
         self.velocity.y = keys[pygame.K_s] - keys[pygame.K_w]
@@ -34,8 +52,14 @@ class PlayerObject(DynamicObject):
             self.velocity = self.velocity.normalize()
 
     def update(self, dt):
+        if not self.is_alive:
+            return
+
         super().update(dt)
         
+        if self.damage_timer > 0:
+            self.damage_timer -= dt
+
         if self.velocity.length() > 0:
             self.frame_index += 12 * dt
             if self.frame_index >= len(self.frames):
@@ -49,7 +73,12 @@ class PlayerObject(DynamicObject):
 
         self.original_image = self.frames[int(self.frame_index)]
         self.image = pygame.transform.rotate(self.original_image, self.angle)
+        
+        if self.damage_timer > 0:
+            self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
+
         self.rect = self.image.get_rect(center=self.position)
 
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
+        if self.is_alive:
+            screen.blit(self.image, self.rect)

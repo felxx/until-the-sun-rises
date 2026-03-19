@@ -16,9 +16,9 @@ class GameWorld:
         self.spawn_timer = 0
         self.shoot_timer = 0
         
-        # Iluminação
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.light_radius = 350 
+        
         self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
         
         pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 60)
@@ -29,7 +29,6 @@ class GameWorld:
             (self.light_radius * 2, self.light_radius + 140)          
         ]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
-        
         self.collision_manager = CollisionManager(
             self.player, self.enemies, self.bullets)
 
@@ -37,46 +36,48 @@ class GameWorld:
         self.spawn_timer += dt
         if self.spawn_timer > 1.5:
             self.spawn_timer = 0
-            # Spawn
             spawn_x = random.choice([-20, SCREEN_WIDTH + 20])
             spawn_y = random.randint(0, SCREEN_HEIGHT)
             self.enemies.append(EnemyObject(spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
 
     def update(self, dt):
+        if not self.player.is_alive:
+            return
+
         self.player.update(dt)
         self.spawn_enemy(dt)
         self.handle_shoot(dt)
 
         for enemy in self.enemies:
             enemy.update(dt)
+            if not enemy.is_dead and self.player.rect.colliderect(enemy.rect):
+                self.player.take_damage(30 * dt)
 
         for bullet in self.bullets[:]:
             bullet.update(dt)
-            if bullet.is_off_screen():
+            for enemy in self.enemies:
+                if not enemy.is_dead and bullet.rect.colliderect(enemy.rect):
+                    enemy.die()
+                    if bullet in self.bullets:
+                        self.bullets.remove(bullet)
+            
+            if bullet.is_off_screen() and bullet in self.bullets:
                 self.bullets.remove(bullet)
 
-        for bullet in self.bullets[:]:
-            for enemy in self.enemies:
-                if not enemy.is_dead:
-                    if bullet.rect.colliderect(enemy.rect):
-                        enemy.die() 
-                        if bullet in self.bullets:
-                            self.bullets.remove(bullet)
-        
+        self.enemies = [e for e in self.enemies if not e.should_remove]
         self.collision_manager.update()
 
     def draw(self, screen):
-        screen.fill((10, 10, 10)) 
+        screen.fill(DARK_FILTER)
         
         for enemy in self.enemies:
             enemy.draw(screen)
-            
         for bullet in self.bullets:
             bullet.draw(screen)
             
         self.player.draw(screen)
         
-        self.fog.fill((20, 20, 25))
+        self.fog.fill((15, 15, 15))
         
         mouse_pos = pygame.mouse.get_pos()
         dx = mouse_pos[0] - self.player.position.x
@@ -87,8 +88,13 @@ class GameWorld:
         light_rect = rotated_light.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
         
         self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
-        
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
+
+        if self.player.is_alive:
+            pygame.draw.rect(screen, (0, 0, 0), (20, 20, 200, 20))
+            hp_width = int(200 * (self.player.current_health / self.player.max_health))
+            pygame.draw.rect(screen, (0, 255, 0), (20, 20, hp_width, 20))
+            pygame.draw.rect(screen, (255, 255, 255), (20, 20, 200, 20), 2)
 
     def handle_shoot(self, dt):
         self.shoot_timer += dt
