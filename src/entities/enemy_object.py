@@ -4,17 +4,32 @@ import os
 from src.entities.dynamic_object import DynamicObject
 
 class EnemyObject(DynamicObject):
-    def __init__(self, x, y, speed, color, radius, target):
+    def __init__(self, x, y, speed, color, radius, target, max_health=1, z_level=1):
         super().__init__(x, y, speed, color, radius)
         self.target = target
         self.angle = 0
+        
+        self.max_health = max_health
+        self.current_health = self.max_health
+        self.z_level = z_level
         
         self.is_dead = False
         self.death_finished = False
         self.death_timer = 0
         self.should_remove = False
         
-        self.zombie_sfx = pygame.mixer.Sound("assets/zombie.mp3")
+        sound_file = "assets/zombie.mp3"
+        self.volume_multi = 0.6
+        
+        walk_prefix = "walk_00"
+        death_prefix = "death_00"
+        
+        if self.z_level == 2:
+            walk_prefix = "walk_lv2_00"
+            death_prefix = "death_lv2_00"
+            self.volume_multi = 0.8
+
+        self.zombie_sfx = pygame.mixer.Sound(sound_file)
         self.zombie_sfx.set_volume(0.0)
         self.zombie_sfx.play(loops=-1)
         
@@ -24,13 +39,17 @@ class EnemyObject(DynamicObject):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         assets_dir = os.path.join(base_dir, "..", "..", "assets")
 
+        display_radius = radius * 3
+        if self.z_level == 2:
+            display_radius *= 1.3
+
         for i in range(9):
-            path = os.path.join(assets_dir, f"walk_00{i}.png")
-            self.walk_frames.append(self._load_and_scale(path, radius * 3))
+            path = os.path.join(assets_dir, f"{walk_prefix}{i}.png")
+            self.walk_frames.append(self._load_and_scale(path, display_radius))
 
         for i in range(6):
-            path = os.path.join(assets_dir, f"Death_00{i}.png")
-            self.death_frames.append(self._load_and_scale(path, radius * 3))
+            path = os.path.join(assets_dir, f"{death_prefix}{i}.png")
+            self.death_frames.append(self._load_and_scale(path, display_radius))
 
         self.frame_index = 0
         self.animation_speed = 10
@@ -46,9 +65,16 @@ class EnemyObject(DynamicObject):
             surf.fill((255, 0, 0))
             return surf
 
+    def take_damage(self, amount):
+        if not self.is_dead:
+            self.current_health -= amount
+            if self.current_health <= 0:
+                self.die()
+
     def die(self):
         if not self.is_dead:
             self.is_dead = True
+            self.current_health = 0
             self.frame_index = 0
             self.velocity = pygame.math.Vector2(0, 0)
             self.zombie_sfx.stop()
@@ -85,7 +111,7 @@ class EnemyObject(DynamicObject):
             
             volume = 1.0 - (dist / max_audio_dist)
             volume = max(0.0, min(1.0, volume))
-            self.zombie_sfx.set_volume(volume * 0.6)
+            self.zombie_sfx.set_volume(volume * self.volume_multi)
 
             self.frame_index += self.animation_speed * dt
             if self.frame_index >= len(self.walk_frames):

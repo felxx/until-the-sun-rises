@@ -15,8 +15,8 @@ class GameWorld:
         self.bullets = []
         self.spawn_timer = 0
         self.shoot_timer = 0
+        self.game_time = 0
         
-        # Inicialização do Áudio Ambiente
         pygame.mixer.music.load("assets/ambient_wind.mp3")
         pygame.mixer.music.set_volume(0.5)
         pygame.mixer.music.play(-1)
@@ -38,12 +38,38 @@ class GameWorld:
             self.player, self.enemies, self.bullets)
 
     def spawn_enemy(self, dt):
+        self.game_time += dt
         self.spawn_timer += dt
-        if self.spawn_timer > 1.5:
+        
+        # O intervalo de spawn diminui conforme o tempo passa
+        spawn_interval = max(0.5, 1.5 - (self.game_time / 60))
+        
+        if self.spawn_timer > spawn_interval:
             self.spawn_timer = 0
-            spawn_x = random.choice([-20, SCREEN_WIDTH + 20])
-            spawn_y = random.randint(0, SCREEN_HEIGHT)
-            self.enemies.append(EnemyObject(spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
+            
+            # Spawn em qualquer borda da tela
+            side = random.choice(['top', 'bottom', 'left', 'right'])
+            if side == 'top':
+                spawn_x, spawn_y = random.randint(0, SCREEN_WIDTH), -50
+            elif side == 'bottom':
+                spawn_x, spawn_y = random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 50
+            elif side == 'left':
+                spawn_x, spawn_y = -50, random.randint(0, SCREEN_HEIGHT)
+            else:
+                spawn_x, spawn_y = SCREEN_WIDTH + 50, random.randint(0, SCREEN_HEIGHT)
+            
+            # Chance de spawnar LV 2 (começa em 10% e sobe com o tempo)
+            lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
+            
+            if random.random() < lv2_chance:
+                # Zumbi LV 2: Mais vida, som próprio e tamanho maior
+                self.enemies.append(EnemyObject(
+                    spawn_x, spawn_y, 130, (255, 0, 0), 15, 
+                    self.player, max_health=2, z_level=2))
+            else:
+                # Zumbi básico
+                self.enemies.append(EnemyObject(
+                    spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
 
     def update(self, dt):
         if not self.player.is_alive:
@@ -59,13 +85,16 @@ class GameWorld:
             if not enemy.is_dead and self.player.rect.colliderect(enemy.rect):
                 self.player.take_damage(30 * dt)
 
+        # Lógica de colisão de projéteis atualizada para suportar vida
         for bullet in self.bullets[:]:
             bullet.update(dt)
             for enemy in self.enemies:
                 if not enemy.is_dead and bullet.rect.colliderect(enemy.rect):
-                    enemy.die()
+                    # Tira 1 de vida do inimigo
+                    enemy.take_damage(1)
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
+                    break # Projétil some após atingir um alvo
             
             if bullet.is_off_screen() and bullet in self.bullets:
                 self.bullets.remove(bullet)
