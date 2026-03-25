@@ -12,6 +12,9 @@ class PlayerObject(DynamicObject):
         self.is_alive = True
         self.damage_timer = 0 
 
+        self.shoot_sfx = pygame.mixer.Sound("assets/shoot.mp3")
+        self.shoot_sfx.set_volume(0.4)
+
         self.frames = []
         for i in range(1, 10):
             path = f"assets/rifle{i}.png"
@@ -31,7 +34,6 @@ class PlayerObject(DynamicObject):
         self.rect = self.image.get_rect(center=(x, y))
 
     def take_damage(self, amount):
-        """Método para reduzir a vida do jogador"""
         if self.is_alive:
             self.current_health -= amount
             self.damage_timer = 0.1 

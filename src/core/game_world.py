@@ -16,6 +16,11 @@ class GameWorld:
         self.spawn_timer = 0
         self.shoot_timer = 0
         
+        # Inicialização do Áudio Ambiente
+        pygame.mixer.music.load("assets/ambient_wind.mp3")
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
+        
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.light_radius = 350 
         
@@ -42,6 +47,7 @@ class GameWorld:
 
     def update(self, dt):
         if not self.player.is_alive:
+            pygame.mixer.music.stop()
             return
 
         self.player.update(dt)
@@ -101,6 +107,7 @@ class GameWorld:
         mouse_pressed = pygame.mouse.get_pressed()
         if mouse_pressed[0] and self.shoot_timer >= 0.3:
             self.shoot_timer = 0
+            self.player.shoot_sfx.play()
             mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
             self.bullets.append(BulletObject(
                 self.player.position.x, self.player.position.y, mouse_pos))
