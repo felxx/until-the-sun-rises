@@ -13,6 +13,9 @@ class PlayerObject(DynamicObject):
         self.is_alive = True
         self.damage_timer = 0 
 
+        self.shoot_sfx = pygame.mixer.Sound("assets/shoot.mp3")
+        self.shoot_sfx.set_volume(0.4)
+
         self.frames = []
         for i in range(1, 10):
             path = f"assets/rifle{i}.png"

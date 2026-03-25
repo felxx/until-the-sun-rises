@@ -14,6 +14,10 @@ class EnemyObject(DynamicObject):
         self.death_timer = 0
         self.should_remove = False
         
+        self.zombie_sfx = pygame.mixer.Sound("assets/zombie.mp3")
+        self.zombie_sfx.set_volume(0.0)
+        self.zombie_sfx.play(loops=-1)
+        
         self.walk_frames = []
         self.death_frames = []
         
@@ -47,6 +51,7 @@ class EnemyObject(DynamicObject):
             self.is_dead = True
             self.frame_index = 0
             self.velocity = pygame.math.Vector2(0, 0)
+            self.zombie_sfx.stop()
 
     def resolve_behavior(self, dt):
         if self.is_dead:
@@ -75,6 +80,13 @@ class EnemyObject(DynamicObject):
             
             current_frame = self.death_frames[int(self.frame_index)]
         else:
+            max_audio_dist = 500
+            dist = self.position.distance_to(self.target.position)
+            
+            volume = 1.0 - (dist / max_audio_dist)
+            volume = max(0.0, min(1.0, volume))
+            self.zombie_sfx.set_volume(volume * 0.6)
+
             self.frame_index += self.animation_speed * dt
             if self.frame_index >= len(self.walk_frames):
                 self.frame_index = 0
@@ -84,7 +96,6 @@ class EnemyObject(DynamicObject):
         self.rect = self.image.get_rect(center=self.position)
 
     def draw(self, screen):
-        # fazer o corpo sumir em 05 segundos
         if self.is_dead and self.death_timer > 3.0:
             alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
             self.image.set_alpha(alpha)
