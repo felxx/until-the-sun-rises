@@ -17,18 +17,19 @@ class GameWorld:
         self.shoot_timer = 0
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.light_radius = 350 
+        self.light_radius = 175 
         
         self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
         
-        pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 60)
+        pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 40)
         
         cone_points = [
             (self.light_radius, self.light_radius),
-            (self.light_radius * 2, self.light_radius - 140),
-            (self.light_radius * 2, self.light_radius + 140)          
+            (self.light_radius * 2, self.light_radius - 60),
+            (self.light_radius * 2, self.light_radius + 60)  
         ]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
+
         self.collision_manager = CollisionManager(
             self.player, self.enemies, self.bullets)
 
@@ -77,11 +78,13 @@ class GameWorld:
             
         self.player.draw(screen)
         
-        self.fog.fill((15, 15, 15))
+        self.fog.fill((15, 15, 15)) 
+                
+        raw_mouse = pygame.mouse.get_pos()
+        dx = (raw_mouse[0] / ZOOM) - self.player.position.x
+        dy = (raw_mouse[1] / ZOOM) - self.player.position.y
         
-        mouse_pos = pygame.mouse.get_pos()
-        dx = mouse_pos[0] - self.player.position.x
-        dy = mouse_pos[1] - self.player.position.y
+        angle = math.degrees(math.atan2(-dy, dx))
         
         angle = math.degrees(math.atan2(-dy, dx))
         rotated_light = pygame.transform.rotate(self.base_light, angle)
@@ -101,6 +104,8 @@ class GameWorld:
         mouse_pressed = pygame.mouse.get_pressed()
         if mouse_pressed[0] and self.shoot_timer >= 0.3:
             self.shoot_timer = 0
-            mouse_pos = pygame.math.Vector2(pygame.mouse.get_pos())
-            self.bullets.append(BulletObject(
-                self.player.position.x, self.player.position.y, mouse_pos))
+            
+            raw_mouse = pygame.mouse.get_pos()
+            mouse_pos = pygame.math.Vector2(raw_mouse[0] / ZOOM, raw_mouse[1] / ZOOM)
+            
+            self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))

@@ -2,6 +2,7 @@ import pygame
 import math
 import os
 from src.entities.dynamic_object import DynamicObject
+from src.core.constants import ZOOM
 
 class PlayerObject(DynamicObject):
     def __init__(self, x, y, speed, color, radius=15):
@@ -31,7 +32,6 @@ class PlayerObject(DynamicObject):
         self.rect = self.image.get_rect(center=(x, y))
 
     def take_damage(self, amount):
-        """Método para reduzir a vida do jogador"""
         if self.is_alive:
             self.current_health -= amount
             self.damage_timer = 0.1 
@@ -67,9 +67,12 @@ class PlayerObject(DynamicObject):
         else:
             self.frame_index = 0
 
-        mouse_x, mouse_y = pygame.mouse.get_pos()
+        raw_mouse_x, raw_mouse_y = pygame.mouse.get_pos()
+        mouse_x = raw_mouse_x / ZOOM
+        mouse_y = raw_mouse_y / ZOOM
+        
         rel_x, rel_y = mouse_x - self.position.x, mouse_y - self.position.y
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 270
 
         self.original_image = self.frames[int(self.frame_index)]
         self.image = pygame.transform.rotate(self.original_image, self.angle)
