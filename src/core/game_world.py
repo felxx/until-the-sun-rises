@@ -1,6 +1,6 @@
-import pygame
-import random
 import math
+import random
+import pygame
 
 from src.core.constants import *
 from src.core.collision_manager import CollisionManager
@@ -25,9 +25,7 @@ class GameWorld:
         self.light_radius = 175 
         
         self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        
         pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 40)
-        
         cone_points = [
             (self.light_radius, self.light_radius),
             (self.light_radius * 2, self.light_radius - 60),
@@ -35,13 +33,11 @@ class GameWorld:
         ]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
 
-        self.collision_manager = CollisionManager(
-            self.player, self.enemies, self.bullets)
+        self.collision_manager = CollisionManager(self.player, self.enemies, self.bullets)
 
     def spawn_enemy(self, dt):
         self.game_time += dt
         self.spawn_timer += dt
-        
         spawn_interval = max(0.5, 1.5 - (self.game_time / 60))
         
         if self.spawn_timer > spawn_interval:
@@ -119,6 +115,9 @@ class GameWorld:
         self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
 
+        self.draw_ui(screen)
+
+    def draw_ui(self, screen):
         if self.player.is_alive:
             pygame.draw.rect(screen, (0, 0, 0), (20, 20, 200, 20))
             hp_width = int(200 * (self.player.current_health / self.player.max_health))
@@ -139,5 +138,4 @@ class GameWorld:
                         
                         raw_mouse = pygame.mouse.get_pos()
                         mouse_pos = pygame.math.Vector2(raw_mouse[0] / ZOOM, raw_mouse[1] / ZOOM)
-                        
                         self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))

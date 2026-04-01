@@ -1,6 +1,6 @@
-import pygame
 import math
-import os
+import pygame
+
 from src.entities.dynamic_object import DynamicObject
 from src.core.constants import ZOOM
 

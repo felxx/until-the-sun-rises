@@ -1,6 +1,7 @@
-import pygame
-import math
 import os
+import math
+import pygame
+
 from src.entities.dynamic_object import DynamicObject
 
 class EnemyObject(DynamicObject):
@@ -8,11 +9,9 @@ class EnemyObject(DynamicObject):
         super().__init__(x, y, speed, color, radius)
         self.target = target
         self.angle = 0
-        
         self.max_health = max_health
         self.current_health = self.max_health
         self.z_level = z_level
-        
         self.is_dead = False
         self.death_finished = False
         self.death_timer = 0
@@ -20,7 +19,6 @@ class EnemyObject(DynamicObject):
         
         sound_file = "assets/zombie.mp3"
         self.volume_multi = 0.4
-        
         walk_prefix = "walk_00"
         death_prefix = "death_00"
         
