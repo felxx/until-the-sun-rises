@@ -13,8 +13,8 @@ class PlayerObject(DynamicObject):
         self.is_alive = True
         self.damage_timer = 0 
 
-        self.shoot_sfx = pygame.mixer.Sound("assets/shoot.mp3")
-        self.shoot_sfx.set_volume(0.4)
+        self.shoot_sfx = pygame.mixer.Sound("assets/shoot.wav")
+        self.shoot_sfx.set_volume(0.9)
 
         self.frames = []
         for i in range(1, 10):
@@ -23,14 +23,14 @@ class PlayerObject(DynamicObject):
                 img = pygame.image.load(path).convert_alpha()
                 img = pygame.transform.scale(img, (64, 64))
                 self.frames.append(img)
-            except pygame.error:
-                surf = pygame.Surface((64, 64))
-                surf.fill((255, 0, 255))
+            except (pygame.error, FileNotFoundError):
+                surf = pygame.Surface((64, 64), pygame.SRCALPHA)
+                pygame.draw.circle(surf, (0, 255, 0), (32, 32), 15)
                 self.frames.append(surf)
 
         self.frame_index = 0
         self.angle = 0
-        self.original_image = self.frames[self.frame_index]
+        self.original_image = self.frames[0]
         self.image = self.original_image
         self.rect = self.image.get_rect(center=(x, y))
 
@@ -48,11 +48,15 @@ class PlayerObject(DynamicObject):
             return
 
         keys = pygame.key.get_pressed()
-        self.velocity.x = keys[pygame.K_d] - keys[pygame.K_a]
-        self.velocity.y = keys[pygame.K_s] - keys[pygame.K_w]
+        move_x = keys[pygame.K_d] - keys[pygame.K_a]
+        move_y = keys[pygame.K_s] - keys[pygame.K_w]
+        
+        self.velocity = pygame.math.Vector2(move_x, move_y)
         
         if self.velocity.length() > 0:
-            self.velocity = self.velocity.normalize()
+            self.velocity = self.velocity.normalize() * self.speed
+        else:
+            self.velocity = pygame.math.Vector2(0, 0)
 
     def update(self, dt):
         if not self.is_alive:
@@ -74,7 +78,8 @@ class PlayerObject(DynamicObject):
         mouse_x = raw_mouse_x / ZOOM
         mouse_y = raw_mouse_y / ZOOM
         
-        rel_x, rel_y = mouse_x - self.position.x, mouse_y - self.position.y
+        rel_x = mouse_x - self.position.x
+        rel_y = mouse_y - self.position.y
         self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 270
 
         self.original_image = self.frames[int(self.frame_index)]
@@ -83,7 +88,7 @@ class PlayerObject(DynamicObject):
         if self.damage_timer > 0:
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
-        self.rect = self.image.get_rect(center=self.position)
+        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
 
     def draw(self, screen):
         if self.is_alive:

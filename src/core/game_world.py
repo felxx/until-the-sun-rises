@@ -42,13 +42,11 @@ class GameWorld:
         self.game_time += dt
         self.spawn_timer += dt
         
-        # O intervalo de spawn diminui conforme o tempo passa
         spawn_interval = max(0.5, 1.5 - (self.game_time / 60))
         
         if self.spawn_timer > spawn_interval:
             self.spawn_timer = 0
             
-            # Spawn em qualquer borda da tela
             side = random.choice(['top', 'bottom', 'left', 'right'])
             if side == 'top':
                 spawn_x, spawn_y = random.randint(0, SCREEN_WIDTH), -50
@@ -59,43 +57,38 @@ class GameWorld:
             else:
                 spawn_x, spawn_y = SCREEN_WIDTH + 50, random.randint(0, SCREEN_HEIGHT)
             
-            # Chance de spawnar LV 2 (começa em 10% e sobe com o tempo)
             lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
             
             if random.random() < lv2_chance:
-                # Zumbi LV 2: Mais vida, som próprio e tamanho maior
                 self.enemies.append(EnemyObject(
                     spawn_x, spawn_y, 130, (255, 0, 0), 15, 
                     self.player, max_health=2, z_level=2))
             else:
-                # Zumbi básico
                 self.enemies.append(EnemyObject(
                     spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
 
-    def update(self, dt):
+    def update(self, dt, events):
         if not self.player.is_alive:
             pygame.mixer.music.stop()
             return
 
         self.player.update(dt)
         self.spawn_enemy(dt)
-        self.handle_shoot(dt)
+        self.handle_shoot(dt, events)
 
         for enemy in self.enemies:
             enemy.update(dt)
             if not enemy.is_dead and self.player.rect.colliderect(enemy.rect):
                 self.player.take_damage(30 * dt)
 
-        # Lógica de colisão de projéteis atualizada para suportar vida
         for bullet in self.bullets[:]:
             bullet.update(dt)
             for enemy in self.enemies:
                 if not enemy.is_dead and bullet.rect.colliderect(enemy.rect):
-                    # Tira 1 de vida do inimigo
                     enemy.take_damage(1)
                     if bullet in self.bullets:
                         self.bullets.remove(bullet)
-                    break # Projétil some após atingir um alvo
+                    break
             
             if bullet.is_off_screen() and bullet in self.bullets:
                 self.bullets.remove(bullet)
@@ -120,8 +113,6 @@ class GameWorld:
         dy = (raw_mouse[1] / ZOOM) - self.player.position.y
         
         angle = math.degrees(math.atan2(-dy, dx))
-        
-        angle = math.degrees(math.atan2(-dy, dx))
         rotated_light = pygame.transform.rotate(self.base_light, angle)
         light_rect = rotated_light.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
         
@@ -134,15 +125,19 @@ class GameWorld:
             pygame.draw.rect(screen, (0, 255, 0), (20, 20, hp_width, 20))
             pygame.draw.rect(screen, (255, 255, 255), (20, 20, 200, 20), 2)
 
-    def handle_shoot(self, dt):
+    def handle_shoot(self, dt, events):
         self.shoot_timer += dt
-        mouse_pressed = pygame.mouse.get_pressed()
-        if mouse_pressed[0] and self.shoot_timer >= 0.3:
-            self.shoot_timer = 0
-            
-            self.player.shoot_sfx.play()
-            
-            raw_mouse = pygame.mouse.get_pos()
-            mouse_pos = pygame.math.Vector2(raw_mouse[0] / ZOOM, raw_mouse[1] / ZOOM)
-            
-            self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))
+        
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if self.shoot_timer >= 0.3:
+                        self.shoot_timer = 0
+                        
+                        self.player.shoot_sfx.stop()
+                        self.player.shoot_sfx.play(loops=0)
+                        
+                        raw_mouse = pygame.mouse.get_pos()
+                        mouse_pos = pygame.math.Vector2(raw_mouse[0] / ZOOM, raw_mouse[1] / ZOOM)
+                        
+                        self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))

@@ -19,16 +19,21 @@ class GameManager:
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0
-            for event in pygame.event.get():
+            
+            # Captura a lista de eventos deste frame
+            events = pygame.event.get()
+            
+            for event in events:
                 if event.type == pygame.QUIT:
                     self.running = False
                 
                 if event.type == pygame.KEYDOWN:
-                    
                     if event.key == pygame.K_r and not self.game_world.player.is_alive:
                         self.game_world = GameWorld()
 
-            self.game_world.update(dt)
+            # Passamos a lista de eventos para o update do mundo
+            self.game_world.update(dt, events)
+            
             self.game_world.draw(self.screen)
             
             if not self.game_world.player.is_alive:

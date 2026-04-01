@@ -19,7 +19,7 @@ class EnemyObject(DynamicObject):
         self.should_remove = False
         
         sound_file = "assets/zombie.mp3"
-        self.volume_multi = 0.6
+        self.volume_multi = 0.4
         
         walk_prefix = "walk_00"
         death_prefix = "death_00"
