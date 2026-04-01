@@ -74,17 +74,24 @@ class GameWorld:
 
         for enemy in self.enemies:
             enemy.update(dt)
-            if not enemy.is_dead and self.player.rect.colliderect(enemy.rect):
-                self.player.take_damage(30 * dt)
+            if not enemy.is_dead:
+
+                distance = self.player.position.distance_to(enemy.position)
+                
+                if distance < (self.player.radius + enemy.radius):
+                    self.player.take_damage(30 * dt)
 
         for bullet in self.bullets[:]:
             bullet.update(dt)
             for enemy in self.enemies:
-                if not enemy.is_dead and bullet.rect.colliderect(enemy.rect):
-                    enemy.take_damage(1)
-                    if bullet in self.bullets:
-                        self.bullets.remove(bullet)
-                    break
+                if not enemy.is_dead:
+                    distance = bullet.position.distance_to(enemy.position)
+                    
+                    if distance < (bullet.radius + enemy.radius):
+                        enemy.take_damage(1)
+                        if bullet in self.bullets:
+                            self.bullets.remove(bullet)
+                        break
             
             if bullet.is_off_screen() and bullet in self.bullets:
                 self.bullets.remove(bullet)

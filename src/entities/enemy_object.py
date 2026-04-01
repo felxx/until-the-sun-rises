@@ -80,11 +80,18 @@ class EnemyObject(DynamicObject):
     def resolve_behavior(self, dt):
         if self.is_dead:
             return
+            
         direction = self.target.position - self.position
-        if direction.length_squared() > 0:
+        distance = direction.length()
+        
+        if distance > 0:
             direction = direction.normalize()
-            self.velocity = direction * self.speed
             self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 250
+            
+            if distance > (self.radius + self.target.radius):
+                self.velocity = direction * self.speed
+            else:
+                self.velocity = pygame.math.Vector2(0, 0)
         else:
             self.velocity = pygame.math.Vector2(0, 0)
 
