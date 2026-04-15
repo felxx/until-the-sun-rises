@@ -65,7 +65,6 @@ class GameWorld:
 
     def update(self, dt, events):
         if not self.player.is_alive:
-            pygame.mixer.music.stop()
             return
 
         self.player.update(dt)
