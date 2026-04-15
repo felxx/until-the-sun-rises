@@ -3,7 +3,6 @@ import random
 import pygame
 
 from src.core.constants import *
-from src.core.collision_manager import CollisionManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
@@ -32,8 +31,6 @@ class GameWorld:
             (self.light_radius * 2, self.light_radius + 60)  
         ]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
-
-        self.collision_manager = CollisionManager(self.player, self.enemies, self.bullets)
 
     def spawn_enemy(self, dt):
         self.game_time += dt
@@ -74,9 +71,7 @@ class GameWorld:
         for enemy in self.enemies:
             enemy.update(dt)
             if not enemy.is_dead:
-
                 distance = self.player.position.distance_to(enemy.position)
-                
                 if distance < (self.player.radius + enemy.radius):
                     self.player.take_damage(30 * dt)
 
@@ -85,7 +80,6 @@ class GameWorld:
             for enemy in self.enemies:
                 if not enemy.is_dead:
                     distance = bullet.position.distance_to(enemy.position)
-                    
                     if distance < (bullet.radius + enemy.radius):
                         enemy.take_damage(1)
                         if bullet in self.bullets:
@@ -96,7 +90,6 @@ class GameWorld:
                 self.bullets.remove(bullet)
 
         self.enemies = [e for e in self.enemies if not e.should_remove]
-        self.collision_manager.update()
 
     def draw(self, screen):
         screen.fill(DARK_FILTER)
