@@ -1,47 +1,54 @@
-import os
 import math
 import pygame
 from src.entities.dynamic_object import DynamicObject
+from src.core.resource_manager import ResourceManager
+from src.core.sprite_sheet import SpriteSheet
+
 
 class EnemyObject(DynamicObject):
+    _walk_sheets = {}
+    _death_sheets = {}
+
     def __init__(self, x, y, speed, radius, target, max_health=1, z_level=1):
         super().__init__(x, y, speed, radius)
         self.target = target
-        self.angle = 0
-        self.max_health = max_health
-        self.current_health = self.max_health
         self.z_level = z_level
+        self.max_health = max_health
+        self.current_health = max_health
+
+        self.angle = 0
         self.is_dead = False
         self.death_finished = False
         self.death_timer = 0
         self.should_remove = False
 
+        self.zombie_sfx = ResourceManager.get_sound("assets/sounds/zombie.mp3")
         self.volume_multi = 0.8 if self.z_level == 2 else 0.4
-        self.zombie_sfx = pygame.mixer.Sound("assets/zombie.mp3")
-        self.zombie_sfx.set_volume(0.0)
-        self._setup_animation_frames(radius)
+
+        self._init_sprites(radius)
+
         self.frame_index = 0
         self.animation_speed = 10
-        self.image = self.walk_frames[0]
+        self.image = self._walk_sheets[self.z_level].get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
 
-    def _setup_animation_frames(self, radius):
-        walk_prefix = "walk_lv2_00" if self.z_level == 2 else "walk_00"
-        death_prefix = "death_lv2_00" if self.z_level == 2 else "death_00"
-        display_radius = (radius * 3) * (1.3 if self.z_level == 2 else 1.0)
+    def _init_sprites(self, radius):
+        if self.z_level not in self._walk_sheets:
+            walk_prefix = "lv_2/walk_00" if self.z_level == 2 else "lv_1/walk_00"
+            death_prefix = "lv_2/death_00" if self.z_level == 2 else "lv_1/death_00"
+            display_size = (radius * 3) * (1.3 if self.z_level == 2 else 1.0)
 
-        self.walk_frames = [self._load_and_scale(f"{walk_prefix}{i}.png", display_radius) for i in range(9)]
-        self.death_frames = [self._load_and_scale(f"{death_prefix}{i}.png", display_radius) for i in range(6)]
+            walk_paths = [f"assets/images/enemy/{walk_prefix}{i}.png" for i in range(9)]
+            death_paths = [f"assets/images/enemy/{death_prefix}{i}.png" for i in range(6)]
 
-    def _load_and_scale(self, filename, size):
-        path = os.path.join("assets", filename)
-        try:
-            img = pygame.image.load(path).convert_alpha()
-            return pygame.transform.scale(img, (int(size), int(size)))
-        except:
-            surf = pygame.Surface((32, 32))
-            surf.fill((255, 0, 0))
-            return surf
+            EnemyObject._walk_sheets[self.z_level] = SpriteSheet(walk_paths, display_size)
+            EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, display_size)
+
+    def die(self):
+        if not self.is_dead:
+            self.is_dead = True
+            self.frame_index = 0
+            self.velocity = pygame.math.Vector2(0, 0)
 
     def take_damage(self, amount):
         if not self.is_dead:
@@ -49,21 +56,10 @@ class EnemyObject(DynamicObject):
             if self.current_health <= 0:
                 self.die()
 
-    def die(self):
-        if not self.is_dead:
-            self.is_dead = True
-            self.frame_index = 0
-            self.velocity = pygame.math.Vector2(0, 0)
-            self.zombie_sfx.stop()
-
     def resolve_behavior(self, dt):
-        if self.is_dead:
-            return
-
+        if self.is_dead: return
         direction = self.target.position - self.position
-        distance = direction.length()
-
-        if distance > (self.radius + self.target.radius):
+        if direction.length() > (self.radius + self.target.radius):
             self.velocity = direction.normalize() * self.speed
             self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 250
         else:
@@ -74,19 +70,22 @@ class EnemyObject(DynamicObject):
 
         if self.is_dead:
             self._update_death_state(dt)
+            sheet = self._death_sheets[self.z_level]
         else:
             self._update_alive_state(dt)
+            sheet = self._walk_sheets[self.z_level]
 
-        self.rect = self.image.get_rect(center=self.rect.center)
+        self.image = sheet.get_frame(self.frame_index, self.angle)
+
+        if self.is_dead and self.death_timer > 3.0:
+            alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
+            self.image = self.image.copy()
+            self.image.set_alpha(alpha)
+
+        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
 
     def _update_alive_state(self, dt):
-        dist = self.position.distance_to(self.target.position)
-        volume = max(0.0, min(1.0, 1.0 - (dist / 500)))
-        self.zombie_sfx.set_volume(volume * self.volume_multi)
-
-        self.frame_index = (self.frame_index + self.animation_speed * dt) % len(self.walk_frames)
-        current_frame = self.walk_frames[int(self.frame_index)]
-        self.image = pygame.transform.rotate(current_frame, self.angle)
+        self.frame_index = (self.frame_index + self.animation_speed * dt) % 9
 
     def _update_death_state(self, dt):
         self.death_timer += dt
@@ -96,14 +95,6 @@ class EnemyObject(DynamicObject):
 
         if not self.death_finished:
             self.frame_index += self.animation_speed * dt
-            if self.frame_index >= len(self.death_frames):
-                self.frame_index = len(self.death_frames) - 1
+            if self.frame_index >= 5:
+                self.frame_index = 5
                 self.death_finished = True
-
-        current_frame = self.death_frames[int(self.frame_index)]
-        self.image = pygame.transform.rotate(current_frame, self.angle)
-
-        if self.death_timer > 3.0:
-            alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
-            self.image = self.image.copy()
-            self.image.set_alpha(alpha)

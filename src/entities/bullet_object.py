@@ -25,7 +25,7 @@ class BulletObject(DynamicObject):
         frames = []
 
         for i in range(1, 5):
-            path = f"assets/Shot{i}.png"
+            path = f"assets/images/bullet/shot{i}.png"
             try:
                 img = pygame.image.load(path).convert_alpha()
                 img = pygame.transform.scale(img, (32, 32))

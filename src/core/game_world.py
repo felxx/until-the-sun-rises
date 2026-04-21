@@ -24,7 +24,7 @@ class GameWorld:
 
         self.collision_manager = CollisionManager(self.player, self.enemies, self.bullets)
 
-        pygame.mixer.music.load("assets/ambient_wind.mp3")
+        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
         pygame.mixer.music.play(-1)
 
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))

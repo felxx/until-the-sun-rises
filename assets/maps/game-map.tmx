@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="97">
  <tileset firstgid="1" name="zombie-tileset" tilewidth="16" tileheight="16" tilecount="846" columns="47">
-  <image source="../tileset/zombie-tileset.png" width="764" height="300"/>
+  <image source="../images/zombie-tileset.png" width="764" height="300"/>
  </tileset>
  <layer id="3" name="lake_layer" width="128" height="128">
   <data encoding="csv">
