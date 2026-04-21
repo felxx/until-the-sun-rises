@@ -8,8 +8,9 @@ class DynamicObject(GameObject, ABC):
         self.velocity = pygame.math.Vector2(0, 0)
         self.speed = speed
         self.radius = radius
+        self._layer = 2
 
-    def update(self, dt):
+    def update(self, dt, world_mouse=None):
         self.resolve_behavior(dt)
         if self.velocity.length() > 0:
             self.velocity = self.velocity.normalize() * self.speed

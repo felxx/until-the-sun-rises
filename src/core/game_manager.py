@@ -39,7 +39,7 @@ class GameManager:
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r and not self.game_world.player.is_alive:
-                    self.game_world = GameWorld()
+                    self.game_world = GameWorld()   
 
     def draw_game_over(self):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)

@@ -1,12 +1,13 @@
 import math
 import pygame
+
 from src.entities.dynamic_object import DynamicObject
-from src.core.constants import ZOOM
+from src.core.constants import *
 from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
 
 class PlayerObject(DynamicObject):
-    def __init__(self, x, y, speed, radius=15):
+    def __init__(self, x, y, speed, radius=8):
         super().__init__(x, y, speed, radius)
 
         self.max_health = 100
@@ -18,12 +19,13 @@ class PlayerObject(DynamicObject):
         self.shoot_sfx.set_volume(0.9)
 
         rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 10)]
-        self.sprite_sheet = SpriteSheet(rifle_paths, 64)
+        self.sprite_sheet = SpriteSheet(rifle_paths, 32)
 
         self.frame_index = 0
         self.angle = 0
         self.image = self.sprite_sheet.get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
+        self._layer = 2
 
     def take_damage(self, amount):
         if self.is_alive:
@@ -43,9 +45,9 @@ class PlayerObject(DynamicObject):
         move_y = keys[pygame.K_s] - keys[pygame.K_w]
         self.velocity = pygame.math.Vector2(move_x, move_y)
 
-    def update(self, dt):
+    def update(self, dt, world_mouse):
         if not self.is_alive: return
-        super().update(dt)
+        super().update(dt, world_mouse)
 
         if self.damage_timer > 0:
             self.damage_timer -= dt
@@ -55,10 +57,9 @@ class PlayerObject(DynamicObject):
         else:
             self.frame_index = 0
 
-        raw_mouse_x, raw_mouse_y = pygame.mouse.get_pos()
-        rel_x = (raw_mouse_x / ZOOM) - self.position.x
-        rel_y = (raw_mouse_y / ZOOM) - self.position.y
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 270
+        rel_x = world_mouse.x - self.position.x
+        rel_y = world_mouse.y - self.position.y
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
 
         self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
 

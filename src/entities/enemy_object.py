@@ -31,12 +31,13 @@ class EnemyObject(DynamicObject):
         self.animation_speed = 10
         self.image = self._walk_sheets[self.z_level].get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
+        self._layer = 2
 
     def _init_sprites(self, radius):
         if self.z_level not in self._walk_sheets:
             walk_prefix = "lv_2/walk_00" if self.z_level == 2 else "lv_1/walk_00"
             death_prefix = "lv_2/death_00" if self.z_level == 2 else "lv_1/death_00"
-            display_size = (radius * 3) * (1.3 if self.z_level == 2 else 1.0)
+            display_size = 32
 
             walk_paths = [f"assets/images/enemy/{walk_prefix}{i}.png" for i in range(9)]
             death_paths = [f"assets/images/enemy/{death_prefix}{i}.png" for i in range(6)]
@@ -57,15 +58,20 @@ class EnemyObject(DynamicObject):
                 self.die()
 
     def resolve_behavior(self, dt):
-        if self.is_dead: return
+        if self.is_dead:
+            self.velocity = pygame.math.Vector2(0, 0)
+            return
+
         direction = self.target.position - self.position
-        if direction.length() > (self.radius + self.target.radius):
-            self.velocity = direction.normalize() * self.speed
-            self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 250
+        dist = direction.length()
+
+        if dist > (self.radius + self.target.radius):
+            self.velocity = direction
+            self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
         else:
             self.velocity = pygame.math.Vector2(0, 0)
 
-    def update(self, dt):
+    def update(self, dt, world_mouse=None):
         super().update(dt)
 
         if self.is_dead:
@@ -81,8 +87,6 @@ class EnemyObject(DynamicObject):
             alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
             self.image = self.image.copy()
             self.image.set_alpha(alpha)
-
-        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
 
     def _update_alive_state(self, dt):
         self.frame_index = (self.frame_index + self.animation_speed * dt) % 9
