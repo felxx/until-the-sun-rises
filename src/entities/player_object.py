@@ -7,8 +7,8 @@ from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
 
 class PlayerObject(DynamicObject):
-    def __init__(self, x, y, speed, radius=8):
-        super().__init__(x, y, speed, radius)
+    def __init__(self, x, y, speed):
+        super().__init__(x, y, speed, hitbox_size=(10, 10), combat_radius=12)
 
         self.max_health = 100
         self.current_health = 100

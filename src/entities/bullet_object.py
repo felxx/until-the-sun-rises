@@ -10,7 +10,7 @@ class BulletObject(DynamicObject):
     _sprite_sheet = None
 
     def __init__(self, x, y, target_pos):
-        super().__init__(x, y, speed=800, radius=5)
+        super().__init__(x, y, speed=800, hitbox_size=(4, 4), combat_radius=5)
 
         if BulletObject._sprite_sheet is None:
             bullet_paths = [f"assets/images/bullet/shot{i}.png" for i in range(1, 5)]

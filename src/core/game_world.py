@@ -107,7 +107,7 @@ class GameWorld:
             enemy = EnemyObject(
                 spawn_pos.x, spawn_pos.y,
                 130 if is_lv2 else 150,
-                15, self.player,
+                self.player,
                 max_health=2 if is_lv2 else 1,
                 z_level=2 if is_lv2 else 1
             )

@@ -1,6 +1,5 @@
 import pygame
 
-
 class CollisionManager:
     def __init__(self, player, enemy_group, bullet_group, walls):
         self.player = player
@@ -19,12 +18,13 @@ class CollisionManager:
 
     def _handle_bullet_enemy_collisions(self):
         for bullet in self.bullet_group:
-            if bullet.rect.collidelist(self.walls) != -1:
+            if bullet.hitbox.collidelist(self.walls) != -1:
                 bullet.kill()
 
         hits = pygame.sprite.groupcollide(
             self.bullet_group, self.enemy_group, True, False, pygame.sprite.collide_circle
         )
+
         for bullet, struck_enemies in hits.items():
             for enemy in struck_enemies:
                 if not enemy.is_dead:
@@ -38,20 +38,24 @@ class CollisionManager:
             if not enemy.is_dead:
                 self.player.take_damage(30 * dt)
 
-    def check_wall_collisions(self, dynamic_obj):
-        idx = dynamic_obj.rect.collidelist(self.walls)
-        if idx != -1:
-            wall_rect = self.walls[idx]
+    def check_wall_collisions(self, obj):
+        for wall in self.walls:
+            if obj.hitbox.colliderect(wall):
+                overlap_left = obj.hitbox.right - wall.left
+                overlap_right = wall.right - obj.hitbox.left
+                overlap_top = obj.hitbox.bottom - wall.top
+                overlap_bottom = wall.bottom - obj.hitbox.top
 
-            if dynamic_obj.velocity.x > 0:
-                dynamic_obj.rect.right = wall_rect.left
-            elif dynamic_obj.velocity.x < 0:
-                dynamic_obj.rect.left = wall_rect.right
+                min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
 
-            if dynamic_obj.velocity.y > 0:
-                dynamic_obj.rect.bottom = wall_rect.top
-            elif dynamic_obj.velocity.y < 0:
-                dynamic_obj.rect.top = wall_rect.bottom
+                if min_overlap == overlap_left:
+                    obj.position.x -= overlap_left
+                elif min_overlap == overlap_right:
+                    obj.position.x += overlap_right
+                elif min_overlap == overlap_top:
+                    obj.position.y -= overlap_top
+                elif min_overlap == overlap_bottom:
+                    obj.position.y += overlap_bottom
 
-            dynamic_obj.position.x = float(dynamic_obj.rect.centerx)
-            dynamic_obj.position.y = float(dynamic_obj.rect.centery)
+                obj.hitbox.center = (int(obj.position.x), int(obj.position.y))
+                obj.rect.center = obj.hitbox.center

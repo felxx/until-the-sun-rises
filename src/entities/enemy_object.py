@@ -9,8 +9,8 @@ class EnemyObject(DynamicObject):
     _walk_sheets = {}
     _death_sheets = {}
 
-    def __init__(self, x, y, speed, radius, target, max_health=1, z_level=1):
-        super().__init__(x, y, speed, radius)
+    def __init__(self, x, y, speed, target, max_health=1, z_level=1):
+        super().__init__(x, y, speed, hitbox_size=(14, 14), combat_radius=15)
         self.target = target
         self.z_level = z_level
         self.max_health = max_health
@@ -25,7 +25,7 @@ class EnemyObject(DynamicObject):
         self.zombie_sfx = ResourceManager.get_sound("assets/sounds/zombie.mp3")
         self.volume_multi = 0.8 if self.z_level == 2 else 0.4
 
-        self._init_sprites(radius)
+        self._setup_sprites()
 
         self.frame_index = 0
         self.animation_speed = 10
@@ -33,17 +33,16 @@ class EnemyObject(DynamicObject):
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
-    def _init_sprites(self, radius):
+    def _setup_sprites(self):
         if self.z_level not in self._walk_sheets:
             walk_prefix = "lv_2/walk_00" if self.z_level == 2 else "lv_1/walk_00"
             death_prefix = "lv_2/death_00" if self.z_level == 2 else "lv_1/death_00"
-            display_size = 32
 
             walk_paths = [f"assets/images/enemy/{walk_prefix}{i}.png" for i in range(9)]
             death_paths = [f"assets/images/enemy/{death_prefix}{i}.png" for i in range(6)]
 
-            EnemyObject._walk_sheets[self.z_level] = SpriteSheet(walk_paths, display_size)
-            EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, display_size)
+            EnemyObject._walk_sheets[self.z_level] = SpriteSheet(walk_paths, int(self.radius * 2))
+            EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, int(self.radius * 2))
 
     def die(self):
         if not self.is_dead:
