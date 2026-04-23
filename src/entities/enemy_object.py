@@ -1,5 +1,6 @@
 import math
 import pygame
+
 from src.entities.dynamic_object import DynamicObject
 from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
@@ -40,9 +41,10 @@ class EnemyObject(DynamicObject):
 
             walk_paths = [f"assets/images/enemy/{walk_prefix}{i}.png" for i in range(9)]
             death_paths = [f"assets/images/enemy/{death_prefix}{i}.png" for i in range(6)]
+            display_size = int(self.radius * 2.4) if self.z_level == 2 else int(self.radius * 2.2)
 
-            EnemyObject._walk_sheets[self.z_level] = SpriteSheet(walk_paths, int(self.radius * 2))
-            EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, int(self.radius * 2))
+            EnemyObject._walk_sheets[self.z_level] = SpriteSheet(walk_paths, display_size)
+            EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, display_size)
 
     def die(self):
         if not self.is_dead:
@@ -66,7 +68,7 @@ class EnemyObject(DynamicObject):
 
         if dist > (self.radius + self.target.radius):
             self.velocity = direction
-            self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
+            self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 270
         else:
             self.velocity = pygame.math.Vector2(0, 0)
 

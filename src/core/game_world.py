@@ -81,7 +81,7 @@ class GameWorld:
         for obj in self.tmx_data.get_layer_by_name("entities_layer"):
             if obj.type == "spawn":
                 if obj.name == "player":
-                    self.player = PlayerObject(obj.x, obj.y, 250)
+                    self.player = PlayerObject(obj.x, obj.y, 125)
                     self.all_sprites.add(self.player)
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
@@ -106,7 +106,7 @@ class GameWorld:
 
             enemy = EnemyObject(
                 spawn_pos.x, spawn_pos.y,
-                130 if is_lv2 else 150,
+                100 if is_lv2 else 80,
                 self.player,
                 max_health=2 if is_lv2 else 1,
                 z_level=2 if is_lv2 else 1
