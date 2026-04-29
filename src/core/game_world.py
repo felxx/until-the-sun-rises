@@ -1,140 +1,177 @@
 import math
 import random
 import pygame
+import pytmx
+import pyscroll
 
 from src.core.constants import *
+from core.collision_manager import CollisionManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 
+
 class GameWorld:
     def __init__(self):
-        self.player = PlayerObject(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, 250, color=(0, 255, 0))
-        self.enemies = []
-        self.bullets = []
+        self.tmx_data = pytmx.util_pygame.load_pygame("assets/maps/game-map.tmx")
+        map_data = pyscroll.data.TiledMapData(self.tmx_data)
+
+        self.map_layer = pyscroll.orthographic.BufferedRenderer(
+            map_data, (SCREEN_WIDTH, SCREEN_HEIGHT), clamp_camera=True
+        )
+        self.map_layer.zoom = ZOOM
+
+        entities_layer_index = None
+        for i, layer in enumerate(self.tmx_data.layers):
+            if layer.name == "entities_layer":
+                entities_layer_index = i
+                break
+
+        if entities_layer_index is None:
+            entities_layer_index = len(self.tmx_data.layers) - 1
+
+        self.all_sprites = pyscroll.PyscrollGroup(
+            map_layer=self.map_layer,
+            default_layer=entities_layer_index
+        )
+
+        self.enemies = pygame.sprite.Group()
+        self.bullets = pygame.sprite.Group()
+
+        self.zombie_spawn = []
+        self.collisions = []
+        self._setup_from_tmx()
+
         self.spawn_timer = 0
         self.shoot_timer = 0
         self.game_time = 0
-        
-        pygame.mixer.music.load("assets/ambient_wind.mp3")
-        pygame.mixer.music.set_volume(0.5)
+
+        self.collision_manager = CollisionManager(
+            self.player, self.enemies, self.bullets, self.collisions
+        )
+
+        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
         pygame.mixer.music.play(-1)
-        
+
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.light_radius = 175 
-        
+        self.light_radius = 175
+        #self._setup_light_texture()
+
+    def get_world_mouse_pos(self):
+        raw_m = pygame.mouse.get_pos()
+
+        win_w, win_h = pygame.display.get_surface().get_size()
+        mx = raw_m[0] * (SCREEN_WIDTH / win_w)
+        my = raw_m[1] * (SCREEN_HEIGHT / win_h)
+
+        cam_x, cam_y = self.map_layer.get_center_offset()
+        world_x = (mx / self.map_layer.zoom) + cam_x
+        world_y = (my / self.map_layer.zoom) + cam_y
+
+        return pygame.math.Vector2(world_x, world_y)
+
+    def _setup_light_texture(self):
         self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 40)
-        cone_points = [
-            (self.light_radius, self.light_radius),
-            (self.light_radius * 2, self.light_radius - 60),
-            (self.light_radius * 2, self.light_radius + 60)  
-        ]
+        cone_points = [(self.light_radius, self.light_radius), (self.light_radius * 2, self.light_radius - 60),
+                       (self.light_radius * 2, self.light_radius + 60)]
         pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
+
+    def _setup_from_tmx(self):
+        for obj in self.tmx_data.get_layer_by_name("entities_layer"):
+            if obj.type == "spawn":
+                if obj.name == "player":
+                    self.player = PlayerObject(obj.x, obj.y, 125)
+                    self.all_sprites.add(self.player)
+                elif obj.name == "zombie":
+                    self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
+
+        for obj in self.tmx_data.get_layer_by_name("collision_layer"):
+            self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
     def spawn_enemy(self, dt):
         self.game_time += dt
         self.spawn_timer += dt
-        spawn_interval = max(0.5, 1.5 - (self.game_time / 60))
-        
-        if self.spawn_timer > spawn_interval:
+
+        if self.spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
             self.spawn_timer = 0
-            
-            side = random.choice(['top', 'bottom', 'left', 'right'])
-            if side == 'top':
-                spawn_x, spawn_y = random.randint(0, SCREEN_WIDTH), -50
-            elif side == 'bottom':
-                spawn_x, spawn_y = random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 50
-            elif side == 'left':
-                spawn_x, spawn_y = -50, random.randint(0, SCREEN_HEIGHT)
-            else:
-                spawn_x, spawn_y = SCREEN_WIDTH + 50, random.randint(0, SCREEN_HEIGHT)
-            
+
+            if not self.zombie_spawn:
+                return
+
+            spawn_pos = random.choice(self.zombie_spawn)
+
             lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
-            
-            if random.random() < lv2_chance:
-                self.enemies.append(EnemyObject(
-                    spawn_x, spawn_y, 130, (255, 0, 0), 15, 
-                    self.player, max_health=2, z_level=2))
-            else:
-                self.enemies.append(EnemyObject(
-                    spawn_x, spawn_y, 150, (255, 0, 0), 15, self.player))
+            is_lv2 = random.random() < lv2_chance
+
+            enemy = EnemyObject(
+                spawn_pos.x, spawn_pos.y,
+                100 if is_lv2 else 80,
+                self.player,
+                max_health=2 if is_lv2 else 1,
+                z_level=2 if is_lv2 else 1
+            )
+
+            self.enemies.add(enemy)
+            self.all_sprites.add(enemy)
+
+    def _get_random_spawn_pos(self):
+        side = random.choice(['top', 'bottom', 'left', 'right'])
+        if side == 'top': return random.randint(0, SCREEN_WIDTH), -50
+        if side == 'bottom': return random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 50
+        if side == 'left': return -50, random.randint(0, SCREEN_HEIGHT)
+        return SCREEN_WIDTH + 50, random.randint(0, SCREEN_HEIGHT)
 
     def update(self, dt, events):
         if not self.player.is_alive:
+            pygame.mixer.music.stop()
             return
 
-        self.player.update(dt)
+        world_mouse = self.get_world_mouse_pos()
+        self.all_sprites.update(dt, world_mouse)
+        self.all_sprites.center(self.player.rect.center)
+
         self.spawn_enemy(dt)
-        self.handle_shoot(dt, events)
-
-        for enemy in self.enemies:
-            enemy.update(dt)
-            if not enemy.is_dead:
-                distance = self.player.position.distance_to(enemy.position)
-                if distance < (self.player.radius + enemy.radius):
-                    self.player.take_damage(30 * dt)
-
-        for bullet in self.bullets[:]:
-            bullet.update(dt)
-            for enemy in self.enemies:
-                if not enemy.is_dead:
-                    distance = bullet.position.distance_to(enemy.position)
-                    if distance < (bullet.radius + enemy.radius):
-                        enemy.take_damage(1)
-                        if bullet in self.bullets:
-                            self.bullets.remove(bullet)
-                        break
-            
-            if bullet.is_off_screen() and bullet in self.bullets:
-                self.bullets.remove(bullet)
-
-        self.enemies = [e for e in self.enemies if not e.should_remove]
+        self.handle_shoot(dt, events, world_mouse)
+        self.collision_manager.update(dt)
 
     def draw(self, screen):
-        screen.fill(DARK_FILTER)
-        
-        for enemy in self.enemies:
-            enemy.draw(screen)
-        for bullet in self.bullets:
-            bullet.draw(screen)
-            
-        self.player.draw(screen)
-        
-        self.fog.fill((15, 15, 15)) 
-                
-        raw_mouse = pygame.mouse.get_pos()
-        dx = (raw_mouse[0] / ZOOM) - self.player.position.x
-        dy = (raw_mouse[1] / ZOOM) - self.player.position.y
-        
+        self.all_sprites.draw(screen)
+        #self._draw_fog(screen)
+        self.draw_ui(screen)
+
+    def _draw_fog(self, screen):
+        self.fog.fill((15, 15, 15))
+        world_mouse = self.get_world_mouse_pos()
+
+        dx = world_mouse.x - self.player.position.x
+        dy = world_mouse.y - self.player.position.y
         angle = math.degrees(math.atan2(-dy, dx))
+
         rotated_light = pygame.transform.rotate(self.base_light, angle)
-        light_rect = rotated_light.get_rect(center=(int(self.player.position.x), int(self.player.position.y)))
-        
+
+        cam_x, cam_y = self.map_layer.get_center_offset()
+        screen_player_x = (self.player.position.x - cam_x) * self.map_layer.zoom
+        screen_player_y = (self.player.position.y - cam_y) * self.map_layer.zoom
+
+        light_rect = rotated_light.get_rect(center=(int(screen_player_x), int(screen_player_y)))
         self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
-
-        self.draw_ui(screen)
 
     def draw_ui(self, screen):
         if self.player.is_alive:
             pygame.draw.rect(screen, (0, 0, 0), (20, 20, 200, 20))
-            hp_width = int(200 * (self.player.current_health / self.player.max_health))
-            pygame.draw.rect(screen, (0, 255, 0), (20, 20, hp_width, 20))
-            pygame.draw.rect(screen, (255, 255, 255), (20, 20, 200, 20), 2)
+            hp_w = int(200 * (self.player.current_health / self.player.max_health))
+            pygame.draw.rect(screen, (0, 255, 0), (20, 20, hp_w, 20))
 
-    def handle_shoot(self, dt, events):
+    def handle_shoot(self, dt, events, world_mouse):
         self.shoot_timer += dt
-        
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if self.shoot_timer >= 0.3:
-                        self.shoot_timer = 0
-                        
-                        self.player.shoot_sfx.stop()
-                        self.player.shoot_sfx.play(loops=0)
-                        
-                        raw_mouse = pygame.mouse.get_pos()
-                        mouse_pos = pygame.math.Vector2(raw_mouse[0] / ZOOM, raw_mouse[1] / ZOOM)
-                        self.bullets.append(BulletObject(self.player.position.x, self.player.position.y, mouse_pos))
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.shoot_timer >= 0.3:
+                    self.shoot_timer = 0
+                    self.player.shoot_sfx.play()
+
+                    bullet = BulletObject(self.player.position.x, self.player.position.y, world_mouse)
+                    self.bullets.add(bullet)
+                    self.all_sprites.add(bullet)

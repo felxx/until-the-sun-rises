@@ -1,55 +1,45 @@
-import pygame
-import math
 import os
+import math
+import pygame
+
+from core.sprite_sheet import SpriteSheet
 from src.entities.dynamic_object import DynamicObject
 from src.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 
 class BulletObject(DynamicObject):
+    _sprite_sheet = None
+
     def __init__(self, x, y, target_pos):
-        super().__init__(x, y, 800, (255, 255, 0), radius=5)
-        
+        super().__init__(x, y, speed=800, hitbox_size=(4, 4), combat_radius=5)
+
+        if BulletObject._sprite_sheet is None:
+            bullet_paths = [f"assets/images/bullet/shot{i}.png" for i in range(1, 5)]
+            BulletObject._sprite_sheet = SpriteSheet(bullet_paths, 32)
+
         direction = target_pos - self.position
         if direction.length_squared() > 0:
             direction = direction.normalize()
-        
-        self.velocity = direction * self.speed
-        self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
-        
-        self.frames = []
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        assets_dir = os.path.join(base_dir, "..", "..", "assets")
 
-        for i in range(1, 5):
-            img_path = os.path.join(assets_dir, f"Shot{i}.png")
-            try:
-                img = pygame.image.load(img_path).convert_alpha()
-                img = pygame.transform.scale(img, (32, 32))
-                img = pygame.transform.rotate(img, self.angle)
-                self.frames.append(img)
-            except:
-                surf = pygame.Surface((10, 10))
-                surf.fill((255, 255, 0))
-                self.frames.append(surf)
+        self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
 
         self.frame_index = 0
-        self.image = self.frames[self.frame_index]
-        self.rect = self.image.get_rect(center=(x, y))
+        self.image = BulletObject._sprite_sheet.get_frame(self.frame_index, self.angle)
+        self.rect = self.image.get_rect(center=self.position)
+        self._layer = 3
 
     def resolve_behavior(self, dt):
         pass
 
-    def update(self, dt):
+    def update(self, dt, world_mouse=None):
         super().update(dt)
-        self.rect.center = self.position
-        
-        self.frame_index += 15 * dt
-        if self.frame_index < len(self.frames):
-            self.image = self.frames[int(self.frame_index)]
+
+        self.frame_index = (self.frame_index + 15 * dt) % 4
+        self.image = BulletObject._sprite_sheet.get_frame(self.frame_index, self.angle)
+
+        if self.is_off_screen():
+            self.kill()
 
     def is_off_screen(self):
-        margin = 100
+        margin = 50
         return (self.position.x < -margin or self.position.x > SCREEN_WIDTH + margin or
                 self.position.y < -margin or self.position.y > SCREEN_HEIGHT + margin)
-
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)

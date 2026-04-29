@@ -2,45 +2,38 @@ import math
 import pygame
 
 from src.entities.dynamic_object import DynamicObject
-from src.core.constants import ZOOM
+from src.core.constants import *
+from src.core.resource_manager import ResourceManager
+from src.core.sprite_sheet import SpriteSheet
 
 class PlayerObject(DynamicObject):
-    def __init__(self, x, y, speed, color, radius=15):
-        super().__init__(x, y, speed, color, radius)
+    def __init__(self, x, y, speed):
+        super().__init__(x, y, speed, hitbox_size=(10, 10), combat_radius=8)
 
         self.max_health = 100
         self.current_health = 100
         self.is_alive = True
-        self.damage_timer = 0 
+        self.damage_timer = 0
 
-        self.shoot_sfx = pygame.mixer.Sound("assets/shoot.wav")
+        self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
 
-        self.frames = []
-        for i in range(1, 10):
-            path = f"assets/rifle{i}.png"
-            try:
-                img = pygame.image.load(path).convert_alpha()
-                img = pygame.transform.scale(img, (64, 64))
-                self.frames.append(img)
-            except (pygame.error, FileNotFoundError):
-                surf = pygame.Surface((64, 64), pygame.SRCALPHA)
-                pygame.draw.circle(surf, (0, 255, 0), (32, 32), 15)
-                self.frames.append(surf)
+        rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 10)]
+        self.sprite_sheet = SpriteSheet(rifle_paths, 32)
 
         self.frame_index = 0
         self.angle = 0
-        self.original_image = self.frames[0]
-        self.image = self.original_image
-        self.rect = self.image.get_rect(center=(x, y))
+        self.image = self.sprite_sheet.get_frame(0, 0)
+        self.rect = self.image.get_rect(center=self.position)
+        self._layer = 2
 
     def take_damage(self, amount):
         if self.is_alive:
             self.current_health -= amount
-            self.damage_timer = 0.1 
+            self.damage_timer = 0.1
             if self.current_health <= 0:
-                self.current_health = 0
                 self.is_alive = False
+                self.kill()
 
                 pygame.mixer.music.stop()
                 pygame.mixer.stop()
@@ -53,46 +46,28 @@ class PlayerObject(DynamicObject):
         keys = pygame.key.get_pressed()
         move_x = keys[pygame.K_d] - keys[pygame.K_a]
         move_y = keys[pygame.K_s] - keys[pygame.K_w]
-        
         self.velocity = pygame.math.Vector2(move_x, move_y)
-        
-        if self.velocity.length() > 0:
-            self.velocity = self.velocity.normalize() * self.speed
-        else:
-            self.velocity = pygame.math.Vector2(0, 0)
 
-    def update(self, dt):
-        if not self.is_alive:
-            return
+    def update(self, dt, world_mouse):
+        if not self.is_alive: return
+        super().update(dt, world_mouse)
 
-        super().update(dt)
-        
         if self.damage_timer > 0:
             self.damage_timer -= dt
 
         if self.velocity.length() > 0:
-            self.frame_index += 12 * dt
-            if self.frame_index >= len(self.frames):
-                self.frame_index = 0
+            self.frame_index = (self.frame_index + 12 * dt) % 9
         else:
             self.frame_index = 0
 
-        raw_mouse_x, raw_mouse_y = pygame.mouse.get_pos()
-        mouse_x = raw_mouse_x / ZOOM
-        mouse_y = raw_mouse_y / ZOOM
-        
-        rel_x = mouse_x - self.position.x
-        rel_y = mouse_y - self.position.y
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 270
+        rel_x = world_mouse.x - self.position.x
+        rel_y = world_mouse.y - self.position.y
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
 
-        self.original_image = self.frames[int(self.frame_index)]
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
-        
+        self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
+
         if self.damage_timer > 0:
+            self.image = self.image.copy()
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
         self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
-
-    def draw(self, screen):
-        if self.is_alive:
-            screen.blit(self.image, self.rect)
