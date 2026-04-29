@@ -35,6 +35,9 @@ class PlayerObject(DynamicObject):
                 self.is_alive = False
                 self.kill()
 
+                pygame.mixer.music.stop()
+                pygame.mixer.stop()
+
     def resolve_behavior(self, dt):
         if not self.is_alive:
             self.velocity = pygame.math.Vector2(0, 0)
