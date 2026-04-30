@@ -64,7 +64,9 @@ class GameWorld:
         mx = raw_m[0] * (SCREEN_WIDTH / win_w)
         my = raw_m[1] * (SCREEN_HEIGHT / win_h)
 
-        cam_x, cam_y = self.map_layer.get_center_offset()
+        cam_x = self.map_layer.view_rect.x
+        cam_y = self.map_layer.view_rect.y
+
         world_x = (mx / self.map_layer.zoom) + cam_x
         world_y = (my / self.map_layer.zoom) + cam_y
 
@@ -127,9 +129,9 @@ class GameWorld:
             pygame.mixer.music.stop()
             return
 
+        self.all_sprites.center(self.player.rect.center)
         world_mouse = self.get_world_mouse_pos()
         self.all_sprites.update(dt, world_mouse)
-        self.all_sprites.center(self.player.rect.center)
 
         self.spawn_enemy(dt)
         self.handle_shoot(dt, events, world_mouse)

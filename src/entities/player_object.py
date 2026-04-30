@@ -59,10 +59,10 @@ class PlayerObject(DynamicObject):
             self.frame_index = (self.frame_index + 12 * dt) % 9
         else:
             self.frame_index = 0
-
+    
         rel_x = world_mouse.x - self.position.x
         rel_y = world_mouse.y - self.position.y
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) - 90
+        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) + 90
 
         self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
 
