@@ -9,6 +9,8 @@ from core.collision_manager import CollisionManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
+from src.entities.landmine_object import LandmineObject
+from src.entities.explosion_effect import ExplosionEffect
 
 
 class GameWorld:
@@ -37,6 +39,7 @@ class GameWorld:
 
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
+        self.landmines = pygame.sprite.Group()
 
         self.zombie_spawn = []
         self.collisions = []
@@ -133,6 +136,19 @@ class GameWorld:
         world_mouse = self.get_world_mouse_pos()
         self.all_sprites.update(dt, world_mouse)
 
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    new_mine = LandmineObject(self.player.position.x, self.player.position.y)
+                    self.landmines.add(new_mine)
+                    self.all_sprites.add(new_mine)
+        
+        for mine in self.landmines:
+            should_explode = mine.update(dt)
+            if should_explode:
+                self.explode_mine(mine)
+                mine.kill()
+
         self.spawn_enemy(dt)
         self.handle_shoot(dt, events, world_mouse)
         self.collision_manager.update(dt)
@@ -177,3 +193,17 @@ class GameWorld:
                     bullet = BulletObject(self.player.position.x, self.player.position.y, world_mouse)
                     self.bullets.add(bullet)
                     self.all_sprites.add(bullet)
+    
+    def explode_mine(self, mine):
+
+        explosion = ExplosionEffect(mine.position.x, mine.position.y)
+        self.all_sprites.add(explosion)
+
+        for enemy in self.enemies:
+            if not enemy.is_dead:
+                enemy_pos = pygame.math.Vector2(enemy.rect.center)
+                distance = enemy_pos.distance_to(mine.position)
+                
+                if distance <= mine.blast_radius:
+                    enemy.take_damage(mine.damage)
+
