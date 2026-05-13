@@ -22,6 +22,7 @@ class EnemyObject(DynamicObject):
         self.death_finished = False
         self.death_timer = 0
         self.should_remove = False
+        self.flash_timer = 0
 
         self.zombie_sfx = ResourceManager.get_sound("assets/sounds/zombie.mp3")
         self.volume_multi = 0.8 if self.z_level == 2 else 0.4
@@ -55,6 +56,7 @@ class EnemyObject(DynamicObject):
     def take_damage(self, amount):
         if not self.is_dead:
             self.current_health -= amount
+            self.flash_timer = 0.1
             if self.current_health <= 0:
                 self.die()
 
@@ -83,6 +85,13 @@ class EnemyObject(DynamicObject):
             sheet = self._walk_sheets[self.z_level]
 
         self.image = sheet.get_frame(self.frame_index, self.angle)
+
+        if self.flash_timer > 0:
+            self.flash_timer -= dt
+            self.image = self.image.copy()
+            flash_surf = pygame.Surface(self.image.get_size()).convert_alpha()
+            flash_surf.fill((255, 0, 0))
+            self.image.blit(flash_surf, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
         if self.is_dead and self.death_timer > 3.0:
             alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
