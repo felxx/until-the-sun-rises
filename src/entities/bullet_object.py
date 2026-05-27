@@ -2,7 +2,7 @@ import os
 import math
 import pygame
 
-from core.sprite_sheet import SpriteSheet
+from src.core.sprite_sheet import SpriteSheet
 from src.entities.dynamic_object import DynamicObject
 from src.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 

@@ -18,7 +18,7 @@ class PlayerObject(DynamicObject):
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
 
-        rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 10)]
+        rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 9)]
         self.sprite_sheet = SpriteSheet(rifle_paths, 32)
 
         self.frame_index = 0

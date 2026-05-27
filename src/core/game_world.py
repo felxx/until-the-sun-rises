@@ -5,7 +5,7 @@ import pytmx
 import pyscroll
 
 from src.core.constants import *
-from core.collision_manager import CollisionManager
+from src.core.collision_manager import CollisionManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject

@@ -1,5 +1,5 @@
 import pygame
-from core.resource_manager import ResourceManager
+from src.core.resource_manager import ResourceManager
 
 class SpriteSheet:
 
