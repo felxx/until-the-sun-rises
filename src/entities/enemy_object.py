@@ -1,28 +1,24 @@
 import math
 import pygame
 
-from src.entities.dynamic_object import DynamicObject
+from src.entities.character_object import CharacterObject
 from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
 
 
-class EnemyObject(DynamicObject):
+class EnemyObject(CharacterObject):
     _walk_sheets = {}
     _death_sheets = {}
 
     def __init__(self, position, speed, target, max_health=1, z_level=1):
-        super().__init__(position, speed, hitbox_size=(14, 14), combat_radius=15)
+        super().__init__(position, speed, max_health=max_health, hitbox_size=(14, 14), combat_radius=15)
         self.target = target
         self.z_level = z_level
-        self.max_health = max_health
-        self.current_health = max_health
 
         self.angle = 0
-        self.is_dead = False
         self.death_finished = False
         self.death_timer = 0
         self.should_remove = False
-        self.flash_timer = 0
 
         self.zombie_sfx = ResourceManager.get_sound("assets/sounds/zombie.mp3")
         self.volume_multi = 0.8 if self.z_level == 2 else 0.4
@@ -48,20 +44,11 @@ class EnemyObject(DynamicObject):
             EnemyObject._death_sheets[self.z_level] = SpriteSheet(death_paths, display_size)
 
     def die(self):
-        if not self.is_dead:
-            self.is_dead = True
-            self.frame_index = 0
-            self.velocity = pygame.math.Vector2(0, 0)
-
-    def take_damage(self, amount):
-        if not self.is_dead:
-            self.current_health -= amount
-            self.flash_timer = 0.1
-            if self.current_health <= 0:
-                self.die()
+        self.frame_index = 0
+        self.velocity = pygame.math.Vector2(0, 0)
 
     def resolve_behavior(self, dt):
-        if self.is_dead:
+        if not self.is_alive:
             self.velocity = pygame.math.Vector2(0, 0)
             return
 
@@ -77,7 +64,7 @@ class EnemyObject(DynamicObject):
     def update(self, dt, world_mouse=None):
         super().update(dt)
 
-        if self.is_dead:
+        if not self.is_alive:
             self._update_death_state(dt)
             sheet = self._death_sheets[self.z_level]
         else:
@@ -86,14 +73,13 @@ class EnemyObject(DynamicObject):
 
         self.image = sheet.get_frame(self.frame_index, self.angle)
 
-        if self.flash_timer > 0:
-            self.flash_timer -= dt
+        if self.damage_flash_timer > 0:
             self.image = self.image.copy()
             flash_surf = pygame.Surface(self.image.get_size()).convert_alpha()
             flash_surf.fill((255, 0, 0))
             self.image.blit(flash_surf, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
-        if self.is_dead and self.death_timer > 3.0:
+        if not self.is_alive and self.death_timer > 3.0:
             alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
             self.image = self.image.copy()
             self.image.set_alpha(alpha)

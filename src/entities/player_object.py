@@ -1,19 +1,15 @@
 import math
 import pygame
 
-from src.entities.dynamic_object import DynamicObject
+from src.entities.character_object import CharacterObject
 from src.core.constants import *
 from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
 
-class PlayerObject(DynamicObject):
-    def __init__(self, position, speed):
-        super().__init__(position, speed, hitbox_size=(10, 10), combat_radius=8)
 
-        self.max_health = 100
-        self.current_health = 100
-        self.is_alive = True
-        self.damage_timer = 0
+class PlayerObject(CharacterObject):
+    def __init__(self, position, speed):
+        super().__init__(position, speed, max_health=100, hitbox_size=(10, 10), combat_radius=8)
 
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
@@ -27,16 +23,10 @@ class PlayerObject(DynamicObject):
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
-    def take_damage(self, amount):
-        if self.is_alive:
-            self.current_health -= amount
-            self.damage_timer = 0.1
-            if self.current_health <= 0:
-                self.is_alive = False
-                self.kill()
-
-                pygame.mixer.music.stop()
-                pygame.mixer.stop()
+    def die(self):
+        self.kill()
+        pygame.mixer.music.stop()
+        pygame.mixer.stop()
 
     def resolve_behavior(self, dt):
         if not self.is_alive:
@@ -52,21 +42,18 @@ class PlayerObject(DynamicObject):
         if not self.is_alive: return
         super().update(dt, world_mouse)
 
-        if self.damage_timer > 0:
-            self.damage_timer -= dt
-
         if self.velocity.length() > 0:
             self.frame_index = (self.frame_index + 12 * dt) % 9
         else:
             self.frame_index = 0
-    
+
         rel_x = world_mouse.x - self.position.x
         rel_y = world_mouse.y - self.position.y
         self.angle = math.degrees(math.atan2(-rel_y, rel_x)) + 90
 
         self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
 
-        if self.damage_timer > 0:
+        if self.damage_flash_timer > 0:
             self.image = self.image.copy()
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 

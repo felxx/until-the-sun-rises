@@ -200,7 +200,7 @@ class GameWorld:
         self.all_sprites.add(explosion)
 
         for enemy in self.enemies:
-            if not enemy.is_dead:
+            if enemy.is_alive:
                 enemy_pos = pygame.math.Vector2(enemy.rect.center)
                 distance = enemy_pos.distance_to(mine.position)
                 
