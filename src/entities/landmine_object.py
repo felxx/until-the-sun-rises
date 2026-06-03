@@ -1,15 +1,15 @@
 import pygame
 
 class LandmineObject(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, position):
         super().__init__()
-        self.position = pygame.math.Vector2(x, y)
+        self.position = position
         self.timer = 5.0
         self.blast_radius = 60
         self.damage = 3
         
         self.image = pygame.Surface((14, 14), pygame.SRCALPHA)
-        self.rect = self.image.get_rect(center=(int(x), int(y)))
+        self.rect = self.image.get_rect(center=self.position)
         self._layer = 1
         self._draw_mine(False)
 
