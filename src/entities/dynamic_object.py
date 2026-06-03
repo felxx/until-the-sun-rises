@@ -3,13 +3,13 @@ from src.core.game_object import GameObject
 import pygame
 
 class DynamicObject(GameObject, ABC):
-    def __init__(self, x, y, speed, hitbox_size=(12, 12), combat_radius=15):
-        super().__init__(x, y)
+    def __init__(self, position, speed, hitbox_size=(12, 12), combat_radius=15):
+        super().__init__(position)
         self.velocity = pygame.math.Vector2(0, 0)
         self.speed = speed
 
         self.hitbox = pygame.Rect(0, 0, hitbox_size[0], hitbox_size[1])
-        self.hitbox.center = (x, y)
+        self.hitbox.center = self.position
 
         self.radius = combat_radius
         self._layer = 2
@@ -21,7 +21,7 @@ class DynamicObject(GameObject, ABC):
 
         self.position += self.velocity * dt
 
-        self.hitbox.center = (int(self.position.x), int(self.position.y))
+        self.hitbox.center = self.position
 
         if hasattr(self, 'rect'):
             self.rect.center = self.hitbox.center

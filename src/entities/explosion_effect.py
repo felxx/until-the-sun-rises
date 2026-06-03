@@ -2,9 +2,10 @@ import pygame
 import os
 
 class ExplosionEffect(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, position):
         super().__init__()
         self.frames = []
+        self.position = position
         
         for i in range(1, 11):
             path = f"assets/images/explosion/explosion-d{i}.png"
@@ -19,7 +20,7 @@ class ExplosionEffect(pygame.sprite.Sprite):
 
         self.frame_index = 0
         self.image = self.frames[0]
-        self.rect = self.image.get_rect(center=(x, y))
+        self.rect = self.image.get_rect(center=self.position)
         self.animation_speed = 25 
         self._layer = 4
 

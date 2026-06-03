@@ -7,8 +7,8 @@ from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
 
 class PlayerObject(DynamicObject):
-    def __init__(self, x, y, speed):
-        super().__init__(x, y, speed, hitbox_size=(10, 10), combat_radius=8)
+    def __init__(self, position, speed):
+        super().__init__(position, speed, hitbox_size=(10, 10), combat_radius=8)
 
         self.max_health = 100
         self.current_health = 100
@@ -70,4 +70,4 @@ class PlayerObject(DynamicObject):
             self.image = self.image.copy()
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
-        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
+        self.rect = self.image.get_rect(center=self.position)

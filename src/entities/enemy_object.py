@@ -10,8 +10,8 @@ class EnemyObject(DynamicObject):
     _walk_sheets = {}
     _death_sheets = {}
 
-    def __init__(self, x, y, speed, target, max_health=1, z_level=1):
-        super().__init__(x, y, speed, hitbox_size=(14, 14), combat_radius=15)
+    def __init__(self, position, speed, target, max_health=1, z_level=1):
+        super().__init__(position, speed, hitbox_size=(14, 14), combat_radius=15)
         self.target = target
         self.z_level = z_level
         self.max_health = max_health

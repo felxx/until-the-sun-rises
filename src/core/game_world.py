@@ -86,7 +86,7 @@ class GameWorld:
         for obj in self.tmx_data.get_layer_by_name("entities_layer"):
             if obj.type == "spawn":
                 if obj.name == "player":
-                    self.player = PlayerObject(obj.x, obj.y, 125)
+                    self.player = PlayerObject(pygame.math.Vector2(obj.x, obj.y), 125)
                     self.all_sprites.add(self.player)
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
@@ -110,7 +110,7 @@ class GameWorld:
             is_lv2 = random.random() < lv2_chance
 
             enemy = EnemyObject(
-                spawn_pos.x, spawn_pos.y,
+                spawn_pos,
                 100 if is_lv2 else 80,
                 self.player,
                 max_health=2 if is_lv2 else 1,
@@ -139,7 +139,7 @@ class GameWorld:
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
-                    new_mine = LandmineObject(self.player.position.x, self.player.position.y)
+                    new_mine = LandmineObject(self.player.position)
                     self.landmines.add(new_mine)
                     self.all_sprites.add(new_mine)
         
@@ -190,13 +190,13 @@ class GameWorld:
                     self.shoot_timer = 0
                     self.player.shoot_sfx.play()
 
-                    bullet = BulletObject(self.player.position.x, self.player.position.y, world_mouse)
+                    bullet = BulletObject(self.player.position, world_mouse)
                     self.bullets.add(bullet)
                     self.all_sprites.add(bullet)
     
     def explode_mine(self, mine):
 
-        explosion = ExplosionEffect(mine.position.x, mine.position.y)
+        explosion = ExplosionEffect(mine.position)
         self.all_sprites.add(explosion)
 
         for enemy in self.enemies:
