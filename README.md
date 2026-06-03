@@ -23,12 +23,12 @@ python -m src.main
 
 ## Próximas Features
 
-- Implementação do mapa
-- Sistema de XP e Level Up (Escolha de Upgrades incluso)
-- Sistema de hordas
-- Implementação da condição de vitória (o amanhecer)
-- Aumentar a variedade do armamento
-- Novos tipos de zumbis
-- Adicionar boss fights ao jogo
-- Melhorias permanentes fora da run
-- Clima dinâmico
+- [x] Implementação do mapa
+- [ ] Sistema de XP e Level Up (Escolha de Upgrades incluso)
+- [ ] Sistema de hordas
+- [ ] Implementação da condição de vitória (o amanhecer)
+- [ ] Aumentar a variedade do armamento
+- [ ] Novos tipos de zumbis
+- [ ] Adicionar boss fights ao jogo
+- [ ] Melhorias permanentes fora da run
+- [ ] Clima dinâmico
