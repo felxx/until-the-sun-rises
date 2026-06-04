@@ -9,9 +9,9 @@ from src.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT
 class BulletObject(DynamicObject):
     _sprite_sheet = None
 
-    def __init__(self, x, y, target_pos):
-        super().__init__(x, y, speed=800, hitbox_size=(4, 4), combat_radius=5)
-        self.start_pos = pygame.math.Vector2(x, y)
+    def __init__(self, position, target_pos):
+        super().__init__(position, speed=800, hitbox_size=(4, 4), combat_radius=5)
+        self.start_pos = position
         self.max_range = 1000
 
         if BulletObject._sprite_sheet is None:

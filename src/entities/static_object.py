@@ -1,10 +1,9 @@
 from src.core.game_object import GameObject
 import pygame
 
-# ainda não implementada
 class StaticObject(GameObject): 
-    def __init__(self, x, y):
-        super().__init__(x, y)
+    def __init__(self, position):
+        super().__init__(position)
 
     def update(self, dt):
         pass

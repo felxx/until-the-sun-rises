@@ -1,6 +1,7 @@
 import pygame
 from src.entities.xp_object import XPObject
 
+
 class CollisionManager:
     def __init__(self, player, enemy_group, bullet_group, walls, all_sprites, xp_gems):
         self.player = player
@@ -16,7 +17,7 @@ class CollisionManager:
 
         self.check_wall_collisions(self.player)
         for enemy in self.enemy_group:
-            if not enemy.is_dead:
+            if enemy.is_alive:
                 self.check_wall_collisions(enemy)
 
     def _handle_bullet_enemy_collisions(self):
@@ -24,29 +25,39 @@ class CollisionManager:
             if bullet.hitbox.collidelist(self.walls) != -1:
                 bullet.kill()
 
+        def alive_collide(bullet, enemy):
+            if not enemy.is_alive:
+                return False
+            return pygame.sprite.collide_circle(bullet, enemy)
+
         hits = pygame.sprite.groupcollide(
-            self.bullet_group, self.enemy_group, True, False, pygame.sprite.collide_circle
+            self.bullet_group, self.enemy_group, True, False, collided=alive_collide
         )
 
         for bullet, struck_enemies in hits.items():
             for enemy in struck_enemies:
-                if not enemy.is_dead:
+                if enemy.is_alive:
                     enemy.take_damage(1)
                     
-                    if enemy.is_dead:
+                    if not enemy.is_alive:
                         xp_amount = 30 if enemy.z_level == 2 else 10
-                        xp = XPObject(enemy.position.x, enemy.position.y, self.player, xp_value=xp_amount)
+                        xp = XPObject(enemy.position, self.player, xp_value=xp_amount)
                         
                         self.xp_gems.add(xp)
                         self.all_sprites.add(xp)
 
     def _handle_player_enemy_collisions(self, dt):
+        def alive_collide(player, enemy):
+            if not enemy.is_alive:
+                return False
+            return pygame.sprite.collide_circle(player, enemy)
+
         collisions = pygame.sprite.spritecollide(
-            self.player, self.enemy_group, False, pygame.sprite.collide_circle
+            self.player, self.enemy_group, False, collided=alive_collide
         )
+
         for enemy in collisions:
-            if not enemy.is_dead:
-                self.player.take_damage(30 * dt)
+            self.player.take_damage(30 * dt)
 
     def check_wall_collisions(self, obj):
         for wall in self.walls:
