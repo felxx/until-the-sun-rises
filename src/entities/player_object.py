@@ -74,5 +74,3 @@ class PlayerObject(CharacterObject):
         self.level += 1
         self.current_xp -= self.xp_to_next_level
         self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
-        
-        print(f"LEVEL UP! Você atingiu o Nível {self.level}")

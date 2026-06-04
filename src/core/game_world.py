@@ -60,6 +60,7 @@ class GameWorld:
 
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.light_radius = 175
+        self.ui_font = pygame.font.Font(None, 28)
         #self._setup_light_texture()
 
     def get_world_mouse_pos(self):
@@ -185,9 +186,26 @@ class GameWorld:
 
     def draw_ui(self, screen):
         if self.player.is_alive:
-            pygame.draw.rect(screen, (0, 0, 0), (20, 20, 200, 20))
+            pygame.draw.rect(screen, (40, 40, 40), (0, 0, SCREEN_WIDTH, 15))
+            
+            xp_w = int(SCREEN_WIDTH * (self.player.current_xp / self.player.xp_to_next_level))
+            pygame.draw.rect(screen, (0, 150, 255), (0, 0, xp_w, 15))
+            
+            pygame.draw.line(screen, (0, 0, 0), (0, 15), (SCREEN_WIDTH, 15), 2)
+
+            lvl_str = f"LVL {self.player.level}"
+            
+            shadow_text = self.ui_font.render(lvl_str, True, (0, 0, 0))
+            shadow_rect = shadow_text.get_rect(topright=(SCREEN_WIDTH - 18, 27))
+            screen.blit(shadow_text, shadow_rect)
+            
+            lvl_text = self.ui_font.render(lvl_str, True, (255, 255, 255))
+            lvl_rect = lvl_text.get_rect(topright=(SCREEN_WIDTH - 20, 25))
+            screen.blit(lvl_text, lvl_rect)
+            
+            pygame.draw.rect(screen, (0, 0, 0), (20, 30, 200, 20))
             hp_w = int(200 * (self.player.current_health / self.player.max_health))
-            pygame.draw.rect(screen, (0, 255, 0), (20, 20, hp_w, 20))
+            pygame.draw.rect(screen, (0, 255, 0), (20, 30, hp_w, 20))
 
     def handle_shoot(self, dt, events, world_mouse):
         self.shoot_timer += dt
