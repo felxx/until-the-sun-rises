@@ -2,8 +2,8 @@ import pygame
 from src.entities.dynamic_object import DynamicObject
 
 class XPObject(DynamicObject):
-    def __init__(self, x, y, player, xp_value=10):
-        super().__init__(x, y, speed=100, hitbox_size=(4, 4))
+    def __init__(self, position, player, xp_value=10):
+        super().__init__(position, speed=100, hitbox_size=(4, 4))
         
         self.player = player
         self.xp_value = xp_value
@@ -31,4 +31,4 @@ class XPObject(DynamicObject):
     def update(self, dt, world_mouse=None):
         super().update(dt, world_mouse)
         
-        self.rect.center = (int(self.position.x), int(self.position.y))
+        self.rect.center = (self.position)
