@@ -61,7 +61,19 @@ class GameWorld:
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.light_radius = 175
         self.ui_font = pygame.font.Font(None, 28)
+        self.ui_font_small = pygame.font.Font(None, 20)
+        self.last_player_level = 1
+        self.is_paused_for_levelup = False
+        self.offered_upgrades = []
+        self.upgrade_cards_rects = []
         #self._setup_light_texture()
+
+    def get_screen_mouse_pos(self):
+        raw_m = pygame.mouse.get_pos()
+        win_w, win_h = pygame.display.get_surface().get_size()
+        mx = raw_m[0] * (SCREEN_WIDTH / win_w)
+        my = raw_m[1] * (SCREEN_HEIGHT / win_h)
+        return mx, my
 
     def get_world_mouse_pos(self):
         raw_m = pygame.mouse.get_pos()
@@ -134,6 +146,15 @@ class GameWorld:
         if not self.player.is_alive:
             pygame.mixer.music.stop()
             return
+        
+        if self.player.level > self.last_player_level:
+            self.is_paused_for_levelup = True
+            self.last_player_level = self.player.level
+            self.generate_upgrades()
+
+        if self.is_paused_for_levelup:
+            self.handle_upgrade_selection(events)
+            return
 
         self.all_sprites.center(self.player.rect.center)
         world_mouse = self.get_world_mouse_pos()
@@ -165,6 +186,36 @@ class GameWorld:
         self.all_sprites.draw(screen)
         #self._draw_fog(screen)
         self.draw_ui(screen)
+        
+        if self.is_paused_for_levelup:
+            self.draw_level_up_screen(screen)
+
+    def draw_level_up_screen(self, screen):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+
+        title = self.ui_font.render("LEVEL UP! Escolha uma Melhoria:", True, (255, 215, 0))
+        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 50))
+        screen.blit(title, title_rect)
+
+        mouse_point = self.get_screen_mouse_pos()
+
+        for i, rect in enumerate(self.upgrade_cards_rects):
+            upgrade = self.offered_upgrades[i]
+            
+            bg_color = (80, 80, 80) if rect.collidepoint(mouse_point) else (40, 40, 40)
+
+            pygame.draw.rect(screen, bg_color, rect, border_radius=10)
+            pygame.draw.rect(screen, (255, 255, 255), rect, width=2, border_radius=10)
+
+            name_txt = self.ui_font.render(upgrade["name"], True, (0, 255, 255))
+            name_rect = name_txt.get_rect(center=(rect.centerx, rect.top + 30))
+            screen.blit(name_txt, name_rect)
+
+            desc_txt = self.ui_font_small.render(upgrade["desc"], True, (200, 200, 200))
+            desc_rect = desc_txt.get_rect(center=(rect.centerx, rect.centery))
+            screen.blit(desc_txt, desc_rect)
 
     def _draw_fog(self, screen):
         self.fog.fill((15, 15, 15))
@@ -202,7 +253,7 @@ class GameWorld:
             lvl_text = self.ui_font.render(lvl_str, True, (255, 255, 255))
             lvl_rect = lvl_text.get_rect(topright=(SCREEN_WIDTH - 20, 25))
             screen.blit(lvl_text, lvl_rect)
-            
+
             pygame.draw.rect(screen, (0, 0, 0), (20, 30, 200, 20))
             hp_w = int(200 * (self.player.current_health / self.player.max_health))
             pygame.draw.rect(screen, (0, 255, 0), (20, 30, hp_w, 20))
@@ -232,3 +283,42 @@ class GameWorld:
                 if distance <= mine.blast_radius:
                     enemy.take_damage(mine.damage)
 
+    def generate_upgrades(self):
+        todas_opcoes = [
+            {"name": "Botas Rápidas", "desc": "+25 Velocidade"},
+            {"name": "Vitalidade", "desc": "+25 Vida Máx"},
+            {"name": "Cura Total", "desc": "Restaura Vida"}
+        ]
+
+        self.offered_upgrades = random.sample(todas_opcoes, 3)
+
+        self.upgrade_cards_rects = []
+        card_w = 140
+        card_h = 200
+        gap = 40
+        start_x = (SCREEN_WIDTH - (3 * card_w + 2 * gap)) // 2
+        
+        for i in range(3):
+            x = start_x + i * (card_w + gap)
+            y = (SCREEN_HEIGHT // 2) - (card_h // 2)
+            rect = pygame.Rect(x, y, card_w, card_h)
+            self.upgrade_cards_rects.append(rect)
+
+    def handle_upgrade_selection(self, events):
+        mouse_point = self.get_screen_mouse_pos()
+        
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                for i, rect in enumerate(self.upgrade_cards_rects):
+                    if rect.collidepoint(mouse_point):
+                        self.apply_upgrade(self.offered_upgrades[i]["name"])
+                        self.is_paused_for_levelup = False
+
+    def apply_upgrade(self, upgrade_name):
+        if upgrade_name == "Botas Rápidas":
+            self.player.speed += 25
+        elif upgrade_name == "Vitalidade":
+            self.player.max_health += 25
+            self.player.current_health += 25
+        elif upgrade_name == "Cura Total":
+            self.player.current_health = self.player.max_health
