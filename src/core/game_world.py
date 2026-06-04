@@ -11,6 +11,7 @@ from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 from src.entities.landmine_object import LandmineObject
 from src.entities.explosion_effect import ExplosionEffect
+from src.entities.xp_object import XPObject
 
 
 class GameWorld:
@@ -40,6 +41,7 @@ class GameWorld:
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         self.landmines = pygame.sprite.Group()
+        self.xp_gems = pygame.sprite.Group()
 
         self.zombie_spawn = []
         self.collisions = []
@@ -50,7 +52,7 @@ class GameWorld:
         self.game_time = 0
 
         self.collision_manager = CollisionManager(
-            self.player, self.enemies, self.bullets, self.collisions
+            self.player, self.enemies, self.bullets, self.collisions, self.all_sprites, self.xp_gems
         )
 
         pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
@@ -152,6 +154,11 @@ class GameWorld:
         self.spawn_enemy(dt)
         self.handle_shoot(dt, events, world_mouse)
         self.collision_manager.update(dt)
+
+        for gem in self.xp_gems:
+            if self.player.position.distance_to(gem.position) < 15:
+                self.player.gain_xp(gem.xp_value)
+                gem.kill()
 
     def draw(self, screen):
         self.all_sprites.draw(screen)

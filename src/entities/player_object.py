@@ -27,6 +27,10 @@ class PlayerObject(DynamicObject):
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
+        self.current_xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
+
     def take_damage(self, amount):
         if self.is_alive:
             self.current_health -= amount
@@ -71,3 +75,17 @@ class PlayerObject(DynamicObject):
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
         self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
+
+    def gain_xp(self, amount):
+        if not self.is_alive: return
+        
+        self.current_xp += amount
+        if self.current_xp >= self.xp_to_next_level:
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.current_xp -= self.xp_to_next_level
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)
+        
+        print(f"LEVEL UP! Você atingiu o Nível {self.level}")
