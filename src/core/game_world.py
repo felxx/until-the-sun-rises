@@ -58,7 +58,6 @@ class GameWorld:
 
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.light_radius = 175
-        #self._setup_light_texture()
 
     def get_world_mouse_pos(self):
         raw_m = pygame.mouse.get_pos()
@@ -109,13 +108,36 @@ class GameWorld:
             lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
             is_lv2 = random.random() < lv2_chance
 
-            enemy = EnemyObject(
-                spawn_pos,
-                100 if is_lv2 else 80,
-                self.player,
-                max_health=2 if is_lv2 else 1,
-                z_level=2 if is_lv2 else 1
-            )
+            if is_lv2:
+                if random.random() < 0.40:
+                    enemy = EnemyObject(
+                        position=spawn_pos,
+                        speed=65,               
+                        target=self.player,
+                        max_health=3,           
+                        z_level=3,              
+                        is_variant=True         
+                    )
+                else:
+                    # Zumbi nível 2
+                    enemy = EnemyObject(
+                        position=spawn_pos,
+                        speed=100,
+                        target=self.player,
+                        max_health=2,
+                        z_level=2,
+                        is_variant=False
+                    )
+            else:
+                # Zumbi nível 1
+                enemy = EnemyObject(
+                    position=spawn_pos,
+                    speed=80,
+                    target=self.player,
+                    max_health=1,
+                    z_level=1,
+                    is_variant=False
+                )
 
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
@@ -195,7 +217,6 @@ class GameWorld:
                     self.all_sprites.add(bullet)
     
     def explode_mine(self, mine):
-
         explosion = ExplosionEffect(mine.position)
         self.all_sprites.add(explosion)
 
@@ -206,4 +227,3 @@ class GameWorld:
                 
                 if distance <= mine.blast_radius:
                     enemy.take_damage(mine.damage)
-
