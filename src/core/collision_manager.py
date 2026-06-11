@@ -1,12 +1,15 @@
 import pygame
+from src.entities.xp_object import XPObject
 
 
 class CollisionManager:
-    def __init__(self, player, enemy_group, bullet_group, walls):
+    def __init__(self, player, enemy_group, bullet_group, walls, all_sprites, xp_gems):
         self.player = player
         self.enemy_group = enemy_group
         self.bullet_group = bullet_group
         self.walls = walls
+        self.all_sprites = all_sprites
+        self.xp_gems = xp_gems
 
     def update(self, dt):
         self._handle_bullet_enemy_collisions()
@@ -33,7 +36,15 @@ class CollisionManager:
 
         for bullet, struck_enemies in hits.items():
             for enemy in struck_enemies:
-                enemy.take_damage(1)
+                if enemy.is_alive:
+                    enemy.take_damage(self.player.damage)
+                    
+                    if not enemy.is_alive:
+                        xp_amount = 30 if enemy.level == 2 else 10
+                        xp = XPObject(enemy.position, self.player, xp_value=xp_amount)
+                        
+                        self.xp_gems.add(xp)
+                        self.all_sprites.add(xp)
 
     def _handle_player_enemy_collisions(self, dt):
         def alive_collide(player, enemy):
@@ -46,7 +57,7 @@ class CollisionManager:
         )
 
         for enemy in collisions:
-            self.player.take_damage(30 * dt)
+            self.player.take_damage(enemy.damage * dt)
 
     def check_wall_collisions(self, obj):
         for wall in self.walls:
