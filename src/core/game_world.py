@@ -120,38 +120,13 @@ class GameWorld:
             spawn_pos = random.choice(self.zombie_spawn)
 
             lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
-            is_lv2 = random.random() < lv2_chance
 
-            if is_lv2:
-                if random.random() < 0.40:
-                    enemy = EnemyObject(
-                        position=spawn_pos,
-                        speed=65,
-                        target=self.player,
-                        max_health=3,
-                        z_level=3,
-                        is_variant=True
-                    )
-                else:
-                    # Zumbi nível 2
-                    enemy = EnemyObject(
-                        position=spawn_pos,
-                        speed=100,
-                        target=self.player,
-                        max_health=2,
-                        z_level=2,
-                        is_variant=False
-                    )
+            if random.random() < lv2_chance:
+                level = 3 if random.random() < 0.40 else 2
             else:
-                # Zumbi nível 1
-                enemy = EnemyObject(
-                    position=spawn_pos,
-                    speed=80,
-                    target=self.player,
-                    max_health=1,
-                    z_level=1,
-                    is_variant=False
-                )
+                level = 1
+
+            enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
 
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)

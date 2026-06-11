@@ -40,8 +40,7 @@ class CollisionManager:
                     enemy.take_damage(self.player.damage)
                     
                     if not enemy.is_alive:
-                        xp_amount = 30 if enemy.level == 2 else 10
-                        xp = XPObject(enemy.position, self.player, xp_value=xp_amount)
+                        xp = XPObject(enemy.position, self.player, xp_value=enemy.xp_value)
                         
                         self.xp_gems.add(xp)
                         self.all_sprites.add(xp)
