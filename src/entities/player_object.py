@@ -8,8 +8,8 @@ from src.core.sprite_sheet import SpriteSheet
 
 
 class PlayerObject(CharacterObject):
-    def __init__(self, position, speed):
-        super().__init__(position, speed, max_health=100, hitbox_size=(10, 10), combat_radius=8)
+    def __init__(self, position, speed, max_health=100, damage=5):
+        super().__init__(position, speed, max_health=max_health, damage=damage, hitbox_size=(10, 10), combat_radius=8)
 
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
@@ -22,6 +22,10 @@ class PlayerObject(CharacterObject):
         self.image = self.sprite_sheet.get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
+
+        self.current_xp = 0
+        self.level = 1
+        self.xp_to_next_level = 100
 
     def die(self):
         self.kill()
@@ -57,4 +61,16 @@ class PlayerObject(CharacterObject):
             self.image = self.image.copy()
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
-        self.rect = self.image.get_rect(center=self.position)
+        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
+
+    def gain_xp(self, amount):
+        if not self.is_alive: return
+        
+        self.current_xp += amount
+        if self.current_xp >= self.xp_to_next_level:
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.current_xp -= self.xp_to_next_level
+        self.xp_to_next_level = int(self.xp_to_next_level * 1.5)

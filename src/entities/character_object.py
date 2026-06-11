@@ -3,11 +3,12 @@ from src.entities.dynamic_object import DynamicObject
 
 
 class CharacterObject(DynamicObject, ABC):
-    def __init__(self, position, speed, max_health, hitbox_size=(12, 12), combat_radius=15):
+    def __init__(self, position, speed, max_health, damage, hitbox_size=(12, 12), combat_radius=15):
         super().__init__(position, speed, hitbox_size, combat_radius)
 
         self.max_health = max_health
         self.current_health = max_health
+        self.damage = damage
         self.is_alive = True
         self.damage_flash_timer = 0
 
