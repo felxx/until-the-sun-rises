@@ -125,8 +125,9 @@ class GameWorld:
                 spawn_pos,
                 100 if is_lv2 else 80,
                 self.player,
-                max_health=2 if is_lv2 else 1,
-                z_level=2 if is_lv2 else 1
+                max_health=10 if is_lv2 else 5,
+                damage=50 if is_lv2 else 30,
+                level=2 if is_lv2 else 1
             )
 
             self.enemies.add(enemy)

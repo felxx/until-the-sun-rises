@@ -8,8 +8,8 @@ from src.core.sprite_sheet import SpriteSheet
 
 
 class PlayerObject(CharacterObject):
-    def __init__(self, position, speed):
-        super().__init__(position, speed, max_health=100, hitbox_size=(10, 10), combat_radius=8)
+    def __init__(self, position, speed, max_health=100, damage=5):
+        super().__init__(position, speed, max_health=max_health, damage=damage, hitbox_size=(10, 10), combat_radius=8)
 
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)

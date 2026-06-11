@@ -14,23 +14,29 @@ class UpgradeManager:
         self.ui_font_small = pygame.font.Font(None, 20)
 
         self.upgrade_pool = [
-            {"name": "Botas Rápidas", "desc": "+25 Velocidade", "action": self._upgrade_speed},
-            {"name": "Vitalidade", "desc": "+25 Vida Máx", "action": self._upgrade_health},
-            {"name": "Cura Total", "desc": "Restaura Vida", "action": self._upgrade_heal},
+            {"name": "Agilidade", "desc": "Velocidade (+15%)", "action": self._upgrade_speed},
+            {"name": "Vitalidade", "desc": "Vida Máxima (+10%)", "action": self._upgrade_health},
+            {"name": "Cura Total", "desc": "Cura toda a vida", "action": self._upgrade_heal},
+            {"name": "Dano Extra", "desc": "Dano (+25%)", "action": self._upgrade_damage}
         ]
 
         self.level_up_start_time = 0
         self.delay_per_card = 0.4
 
     def _upgrade_speed(self):
-        self.player.speed += 25
+        self.player.speed *= 1.15
 
     def _upgrade_health(self):
-        self.player.max_health += 25
-        self.player.current_health += 25
+        health_increase = self.player.max_health * 0.10
+
+        self.player.max_health += health_increase
+        self.player.current_health += health_increase
 
     def _upgrade_heal(self):
         self.player.current_health = self.player.max_health
+
+    def _upgrade_damage(self):
+        self.player.damage *= 1.25
 
     def trigger_level_up(self):
         self.is_paused_for_levelup = True
