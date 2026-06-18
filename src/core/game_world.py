@@ -7,12 +7,13 @@ import pyscroll
 from src.core.constants import *
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
+from src.core.visual_sprite import VisualSprite
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 from src.entities.landmine_object import LandmineObject
 from src.entities.explosion_effect import ExplosionEffect
-
+from src.entities.xp_object import XPObject
 
 class GameWorld:
     def __init__(self):
@@ -38,10 +39,11 @@ class GameWorld:
             default_layer=entities_layer_index
         )
 
-        self.enemies = pygame.sprite.Group()
-        self.bullets = pygame.sprite.Group()
-        self.landmines = pygame.sprite.Group()
-        self.xp_gems = pygame.sprite.Group()
+        self.enemies = []
+        self.bullets = []
+        self.landmines = []
+        self.xp_gems = []
+        self.effects = []
 
         self.zombie_spawn = []
         self.collisions = []
@@ -52,9 +54,7 @@ class GameWorld:
         self.game_time = 0
 
         self.upgrade_manager = UpgradeManager(self.player)
-        self.collision_manager = CollisionManager(
-            self.player, self.enemies, self.bullets, self.collisions, self.all_sprites, self.xp_gems
-        )
+        self.collision_manager = CollisionManager(self)
 
         pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
         pygame.mixer.music.play(-1)
@@ -64,7 +64,14 @@ class GameWorld:
         self.ui_font = pygame.font.Font(None, 28)
         self.ui_font_small = pygame.font.Font(None, 20)
         self.last_player_level = 1
-        #self._setup_light_texture()
+
+    def add_entity(self, entity, logic_list):
+        logic_list.append(entity)
+        visual = VisualSprite(entity)
+        self.all_sprites.add(visual)
+
+    def add_xp(self, xp_entity):
+        self.add_entity(xp_entity, self.xp_gems)
 
     def get_screen_mouse_pos(self):
         raw_m = pygame.mouse.get_pos()
@@ -75,7 +82,6 @@ class GameWorld:
 
     def get_world_mouse_pos(self):
         raw_m = pygame.mouse.get_pos()
-
         win_w, win_h = pygame.display.get_surface().get_size()
         mx = raw_m[0] * (SCREEN_WIDTH / win_w)
         my = raw_m[1] * (SCREEN_HEIGHT / win_h)
@@ -100,7 +106,7 @@ class GameWorld:
             if obj.type == "spawn":
                 if obj.name == "player":
                     self.player = PlayerObject(pygame.math.Vector2(obj.x, obj.y), 125)
-                    self.all_sprites.add(self.player)
+                    self.all_sprites.add(VisualSprite(self.player))
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
 
@@ -118,7 +124,6 @@ class GameWorld:
                 return
 
             spawn_pos = random.choice(self.zombie_spawn)
-
             lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
 
             if random.random() < lv2_chance:
@@ -127,9 +132,7 @@ class GameWorld:
                 level = 1
 
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
-
-            self.enemies.add(enemy)
-            self.all_sprites.add(enemy)
+            self.add_entity(enemy, self.enemies)
 
     def _get_random_spawn_pos(self):
         side = random.choice(['top', 'bottom', 'left', 'right'])
@@ -151,16 +154,25 @@ class GameWorld:
             self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
             return
 
-        self.all_sprites.center(self.player.rect.center)
         world_mouse = self.get_world_mouse_pos()
-        self.all_sprites.update(dt, world_mouse)
+        
+        self.player.update(dt, world_mouse)
+        for bullet in self.bullets: bullet.update(dt, world_mouse)
+        for enemy in self.enemies: enemy.update(dt, world_mouse)
+        for gem in self.xp_gems: gem.update(dt, world_mouse)
+        for effect in self.effects: effect.update(dt, world_mouse)
+
+        self.bullets = [b for b in self.bullets if getattr(b, 'active', True)]
+        self.enemies = [e for e in self.enemies if getattr(e, 'active', True)]
+        self.xp_gems = [g for g in self.xp_gems if getattr(g, 'active', True)]
+        self.landmines = [m for m in self.landmines if getattr(m, 'active', True)]
+        self.effects = [ef for ef in self.effects if getattr(ef, 'active', True)]
 
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
                     new_mine = LandmineObject(self.player.position)
-                    self.landmines.add(new_mine)
-                    self.all_sprites.add(new_mine)
+                    self.add_entity(new_mine, self.landmines)
         
         for mine in self.landmines:
             should_explode = mine.update(dt)
@@ -173,13 +185,15 @@ class GameWorld:
         self.collision_manager.update(dt)
 
         for gem in self.xp_gems:
-            if self.player.position.distance_to(gem.position) < 15:
+            if getattr(gem, 'active', True) and self.player.position.distance_to(gem.position) < 15:
                 self.player.gain_xp(gem.xp_value)
                 gem.kill()
 
+        self.all_sprites.center(self.player.rect.center)
+        self.all_sprites.update(dt)
+
     def draw(self, screen):
         self.all_sprites.draw(screen)
-        #self._draw_fog(screen)
         self.draw_health_bar(screen)
         self.draw_xp_bar(screen)
         self.upgrade_manager.draw(screen, self.get_screen_mouse_pos)
@@ -233,20 +247,22 @@ class GameWorld:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self.shoot_timer >= 0.3:
                     self.shoot_timer = 0
-                    self.player.shoot_sfx.play()
+                    if hasattr(self.player, 'shoot_sfx'):
+                        self.player.shoot_sfx.play()
 
                     bullet = BulletObject(self.player.position, world_mouse)
-                    self.bullets.add(bullet)
-                    self.all_sprites.add(bullet)
+                    self.add_entity(bullet, self.bullets)
     
     def explode_mine(self, mine):
         explosion = ExplosionEffect(mine.position)
-        self.all_sprites.add(explosion)
+        self.add_entity(explosion, self.effects)
 
         for enemy in self.enemies:
-            if enemy.is_alive:
+            if getattr(enemy, 'is_alive', True):
                 enemy_pos = pygame.math.Vector2(enemy.rect.center)
                 distance = enemy_pos.distance_to(mine.position)
                 
                 if distance <= mine.blast_radius:
                     enemy.take_damage(mine.damage)
+                    if not enemy.is_alive:
+                        self.add_xp(XPObject(enemy.position.x, enemy.position.y, self.player, 20))
