@@ -56,7 +56,7 @@ class GameWorld:
             self.player, self.enemies, self.bullets, self.collisions, self.all_sprites, self.xp_gems
         )
 
-        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
+        pygame.mixer.music.load("assets/sounds/ambient_wind_boosted_300.mp3")
         pygame.mixer.music.play(-1)
 
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
