@@ -1,4 +1,5 @@
 import math
+import random
 import pygame
 
 from src.entities.character_object import CharacterObject
@@ -9,6 +10,7 @@ from src.core.sprite_sheet import SpriteSheet
 class EnemyObject(CharacterObject):
     _walk_sheets = {}
     _death_sheets = {}
+    _zombie_sounds = []
 
     ENEMY_PROPERTIES = {
         1: {"speed": 100, "max_health": 5, "damage": 20, "xp_value": 10},
@@ -17,7 +19,6 @@ class EnemyObject(CharacterObject):
     }
 
     def __init__(self, position, target, level=1):
-
         properties = self.ENEMY_PROPERTIES.get(level, self.ENEMY_PROPERTIES[1])
 
         super().__init__(
@@ -29,7 +30,7 @@ class EnemyObject(CharacterObject):
             combat_radius=15
         )
 
-        self.xp_value = properties["max_health"]
+        self.xp_value = properties["xp_value"]
         self.target = target
         self.level = level
 
@@ -38,8 +39,8 @@ class EnemyObject(CharacterObject):
         self.death_timer = 0
         self.should_remove = False
 
-        self.zombie_sfx = ResourceManager.get_sound("assets/sounds/zombie.mp3")
-        self.volume_multi = 0.8 if self.level >= 2 else 0.4
+        self._setup_sounds()
+        self.sound_timer = random.uniform(1.0, 4.0)
 
         self._setup_sprites()
         self.frame_index = 0
@@ -47,6 +48,19 @@ class EnemyObject(CharacterObject):
         self.image = self._walk_sheets[self.level].get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
+
+    def _setup_sounds(self):
+        if not EnemyObject._zombie_sounds:
+            sound_files = [
+                "assets/sounds/katjasavia-female-monster-zombie-218088.mp3",
+                "assets/sounds/freesound_community-zombie-growl-3-6863.mp3",
+                "assets/sounds/dragon-studio-zombie-sfx-450450.mp3"
+            ]
+            for file_path in sound_files:
+                sound = ResourceManager.get_sound(file_path)
+                if sound:
+                    sound.set_volume(0.5)  
+                    EnemyObject._zombie_sounds.append(sound)
 
     def _setup_sprites(self):
         if self.level not in self._walk_sheets:
@@ -97,6 +111,7 @@ class EnemyObject(CharacterObject):
             sheet = self._death_sheets[self.level]
         else:
             self._update_alive_state(dt)
+            self._update_ambient_sounds(dt)
             sheet = self._walk_sheets[self.level]
 
         self.image = sheet.get_frame(self.frame_index, self.angle)
@@ -111,6 +126,16 @@ class EnemyObject(CharacterObject):
             alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
             self.image = self.image.copy()
             self.image.set_alpha(alpha)
+
+    def _update_ambient_sounds(self, dt):
+        """Gerencia o tempo e a probabilidade de sorteio dos sons de fundo"""
+        self.sound_timer -= dt
+        if self.sound_timer <= 0:
+            self.sound_timer = random.uniform(4.0, 8.0)
+
+            if random.random() < 0.20 and EnemyObject._zombie_sounds:
+                chosen_sound = random.choice(EnemyObject._zombie_sounds)
+                chosen_sound.play()
 
     def _update_alive_state(self, dt):
         self.frame_index = (self.frame_index + self.animation_speed * dt) % 9
