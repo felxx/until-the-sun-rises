@@ -12,6 +12,7 @@ from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 from src.entities.landmine_object import LandmineObject
 from src.entities.explosion_effect import ExplosionEffect
+from src.entities.shield_effect import ShieldEffect
 
 
 class GameWorld:
@@ -46,6 +47,10 @@ class GameWorld:
         self.zombie_spawn = []
         self.collisions = []
         self._setup_from_tmx()
+
+        # Instanciação do sistema de escudo vinculado ao jogador
+        self.shield = ShieldEffect(self.player)
+        self.player.shield = self.shield
 
         self.spawn_timer = 0
         self.shoot_timer = 0
@@ -176,6 +181,7 @@ class GameWorld:
 
         if self.player.level > self.last_player_level:
             self.last_player_level = self.player.level
+            self.shield.activate()  # Ativa o escudo temporário de 5s ao subir de nível
             self.upgrade_manager.trigger_level_up()
 
         if self.upgrade_manager.is_paused_for_levelup:
@@ -185,6 +191,9 @@ class GameWorld:
         self.all_sprites.center(self.player.rect.center)
         world_mouse = self.get_world_mouse_pos()
         self.all_sprites.update(dt, world_mouse)
+        
+        # Atualiza a física e animação do escudo
+        self.shield.update(dt)
 
         for event in events:
             if event.type == pygame.KEYDOWN:
@@ -210,6 +219,12 @@ class GameWorld:
 
     def draw(self, screen):
         self.all_sprites.draw(screen)
+        
+        # Desenha a animação do escudo na posição da câmera
+        cam_x = self.map_layer.view_rect.x
+        cam_y = self.map_layer.view_rect.y
+        self.shield.draw(screen, camera_zoom=self.map_layer.zoom, camera_offset=(cam_x, cam_y))
+
         self._draw_fog(screen)
         self.draw_health_bar(screen)
         self.draw_xp_bar(screen)

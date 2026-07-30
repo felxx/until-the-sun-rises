@@ -56,7 +56,11 @@ class CollisionManager:
         )
 
         for enemy in collisions:
-            self.player.take_damage(enemy.damage * dt)
+            # Bloqueia dano se o escudo estiver ativo
+            if hasattr(self.player, 'shield') and self.player.shield and self.player.shield.is_active:
+                self.player.shield.trigger_hit(enemy.position)
+            else:
+                self.player.take_damage(enemy.damage * dt)
 
     def check_wall_collisions(self, obj):
         for wall in self.walls:
