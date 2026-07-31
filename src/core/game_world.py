@@ -11,8 +11,6 @@ from src.core.sprite_manager import SpriteManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
-from src.entities.landmine_object import LandmineObject
-from src.entities.explosion_effect import ExplosionEffect
 from src.entities.xp_object import XPObject
 
 class GameWorld:
@@ -40,9 +38,7 @@ class GameWorld:
         
         self.enemies = []
         self.bullets = []
-        self.landmines = []
         self.xp_gems = []
-        self.effects = []
         self.zombie_spawn = []
         self.collisions = []
         
@@ -149,25 +145,10 @@ class GameWorld:
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
-        for effect in self.effects: effect.update(dt, world_mouse)
         
         self.bullets = [b for b in self.bullets if getattr(b, 'active', True)]
         self.enemies = [e for e in self.enemies if getattr(e, 'active', True)]
         self.xp_gems = [g for g in self.xp_gems if getattr(g, 'active', True)]
-        self.landmines = [m for m in self.landmines if getattr(m, 'active', True)]
-        self.effects = [ef for ef in self.effects if getattr(ef, 'active', True)]
-        
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
-                    new_mine = LandmineObject(self.player.position)
-                    self.add_entity(new_mine, self.landmines)
-                    
-        for mine in self.landmines:
-            should_explode = mine.update(dt)
-            if should_explode:
-                self.explode_mine(mine)
-                mine.kill()
                 
         self.spawn_enemy(dt)
         self.handle_shoot(dt, events, world_mouse)
@@ -231,16 +212,3 @@ class GameWorld:
                         self.player.shoot_sfx.play()
                     bullet = BulletObject(self.player.position, world_mouse)
                     self.add_entity(bullet, self.bullets)
-                    
-    def explode_mine(self, mine):
-        explosion = ExplosionEffect(mine.position)
-        self.add_entity(explosion, self.effects)
-        for enemy in self.enemies:
-            if getattr(enemy, 'is_alive', True):
-                enemy_pos = pygame.math.Vector2(enemy.rect.center)
-                distance = enemy_pos.distance_to(mine.position)
-                
-                if distance <= mine.blast_radius:
-                    enemy.take_damage(mine.damage)
-                    if not enemy.is_alive:
-                        self.add_xp(XPObject(enemy.position, self.player, xp_value=20))
