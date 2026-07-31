@@ -25,9 +25,8 @@ class BulletObject(DynamicObject):
             self.angle = math.degrees(math.atan2(-self.velocity.y, self.velocity.x)) - 90
         else:
             self.velocity = pygame.math.Vector2(0, 0)
-
-        self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
-
+            self.angle = 0
+            
         self.frame_index = 0
         self.image = BulletObject._sprite_sheet.get_frame(self.frame_index, self.angle)
         self.rect = self.image.get_rect(center=self.position)
