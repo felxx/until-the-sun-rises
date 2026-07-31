@@ -48,9 +48,9 @@ class GameWorld:
         self.shoot_timer = 0
         self.game_time = 0
         self.upgrade_manager = UpgradeManager(self.player)
+
         self.collision_manager = CollisionManager(self)
-        
-        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
+        pygame.mixer.music.load("assets/sounds/ambient_wind_boosted_300.mp3")
         pygame.mixer.music.play(-1)
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
