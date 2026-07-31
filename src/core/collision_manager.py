@@ -41,8 +41,22 @@ class CollisionManager:
 
         for enemy in self.world.enemies:
             if getattr(enemy, 'is_alive', True) and getattr(enemy, 'active', True):
+                
                 if self.world.player.hitbox.colliderect(enemy.hitbox):
                     self.world.player.take_damage(enemy.damage * dt)
+
+                overlap_vec = enemy.position - self.world.player.position
+                dist = overlap_vec.length()
+
+                min_dist = 12
+
+                if 0 < dist < min_dist:
+                    push_factor = min_dist - dist
+                    enemy.position += overlap_vec.normalize() * push_factor
+                    
+                    enemy.hitbox.center = (int(enemy.position.x), int(enemy.position.y))
+                    if hasattr(enemy, 'rect'):
+                        enemy.rect.center = enemy.hitbox.center
 
     def check_wall_collisions(self, obj):
         if not hasattr(obj, 'hitbox'):
