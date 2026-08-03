@@ -47,17 +47,66 @@ class GameWorld:
         self.spawn_timer = 0
         self.shoot_timer = 0
         self.game_time = 0
+        
         self.upgrade_manager = UpgradeManager(self.player)
-
         self.collision_manager = CollisionManager(self)
+        
         pygame.mixer.music.load("assets/sounds/ambient_wind_boosted_300.mp3")
         pygame.mixer.music.play(-1)
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.light_radius = 175
+        self.DAWN_DURATION = DAWN_DURATION 
+        self.NIGHT_COLOR = DARK_FILTER
+        self.DAY_COLOR = DAY_FILTER
+        
+        self.flashlight_range = 280
+        self.flashlight_angle = 50 
+        self.aura_radius = 300 
+        
+        self.base_light = self._create_light_texture()
+        self.light_cache = {}
         self.ui_font = pygame.font.Font(None, 28)
         self.ui_font_small = pygame.font.Font(None, 20)
         self.last_player_level = 1
+        
+        self.is_victorious = False
+
+    def _create_light_texture(self):
+        size = self.flashlight_range * 2 + 100
+        center = (size // 2, size // 2)
+        surface = pygame.Surface((size, size), pygame.SRCALPHA)
+        
+        aura_steps = 50
+        for i in range(aura_steps, 0, -1):
+            r = int(self.aura_radius * (i / aura_steps))
+            factor = 1.0 - (i / aura_steps)
+            intensity = int(200 * (factor ** 2.5)) 
+            pygame.draw.circle(surface, (intensity, intensity, intensity, 255), center, r)
+            
+        cone_steps = 35
+        half_angle = self.flashlight_angle / 2.0
+        
+        center_vec = pygame.math.Vector2(center)
+        
+        for i in range(cone_steps, 0, -1):
+            curr_dist = self.flashlight_range * (i / cone_steps)
+            factor = 1.0 - (i / cone_steps)
+            intensity = int(240 * (factor ** 0.85)) 
+            arc_points = [center]
+            num_segments = 16
+            
+            for seg in range(num_segments + 1):
+                angle_deg = -half_angle + (self.flashlight_angle * seg / num_segments)
+                
+                offset = pygame.math.Vector2()
+                offset.from_polar((curr_dist, angle_deg))
+                
+                point = center_vec + offset
+                arc_points.append((point.x, point.y))
+                
+            pygame.draw.polygon(surface, (intensity, intensity, intensity, 255), arc_points)
+            
+        return surface
 
     def add_entity(self, entity, logic_list):
         logic_list.append(entity)
@@ -85,13 +134,6 @@ class GameWorld:
         world_y = (my / self.map_layer.zoom) + cam_y
         return pygame.math.Vector2(world_x, world_y)
 
-    def _setup_light_texture(self):
-        self.base_light = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(self.base_light, (100, 100, 100), (self.light_radius, self.light_radius), 40)
-        cone_points = [(self.light_radius, self.light_radius), (self.light_radius * 2, self.light_radius - 60),
-                       (self.light_radius * 2, self.light_radius + 60)]
-        pygame.draw.polygon(self.base_light, (255, 255, 255), cone_points)
-
     def _setup_from_tmx(self):
         for obj in self.tmx_data.get_layer_by_name("entities_layer"):
             if obj.type == "spawn":
@@ -104,7 +146,9 @@ class GameWorld:
             self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
     def spawn_enemy(self, dt):
-        self.game_time += dt
+        if self.is_victorious:
+            return
+            
         self.spawn_timer += dt
         if self.spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
             self.spawn_timer = 0
@@ -119,16 +163,17 @@ class GameWorld:
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
             self.add_entity(enemy, self.enemies)
 
-    def _get_random_spawn_pos(self):
-        side = random.choice(['top', 'bottom', 'left', 'right'])
-        if side == 'top': return random.randint(0, SCREEN_WIDTH), -50
-        if side == 'bottom': return random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 50
-        if side == 'left': return -50, random.randint(0, SCREEN_HEIGHT)
-        return SCREEN_WIDTH + 50, random.randint(0, SCREEN_HEIGHT)
-
     def update(self, dt, events):
-        if not self.player.is_alive:
+        if not self.player.is_alive or self.is_victorious:
             pygame.mixer.music.stop()
+            return
+            
+        self.game_time += dt
+        
+        if self.game_time >= self.DAWN_DURATION:
+            self.is_victorious = True
+            for enemy in self.enemies:
+                enemy.take_damage(9999)
             return
             
         if self.player.level > self.last_player_level:
@@ -157,28 +202,49 @@ class GameWorld:
         for gem in self.xp_gems:
             if getattr(gem, 'active', True) and self.player.position.distance_to(gem.position) < 15:
                 self.player.gain_xp(gem.xp_value)
-                gem.kill()
+                gem.active = False
                 
         self.all_sprites.center(self.player.rect.center)
         self.all_sprites.update(dt)
 
     def draw(self, screen):
         self.all_sprites.draw(screen)
+        self._draw_fog(screen)
         self.draw_health_bar(screen)
         self.draw_xp_bar(screen)
         self.upgrade_manager.draw(screen, self.get_screen_mouse_pos)
 
     def _draw_fog(self, screen):
-        self.fog.fill((15, 15, 15))
+        progress = min(1.0, self.game_time / self.DAWN_DURATION)
+        
+        r = int(self.NIGHT_COLOR[0] + (self.DAY_COLOR[0] - self.NIGHT_COLOR[0]) * progress)
+        g = int(self.NIGHT_COLOR[1] + (self.DAY_COLOR[1] - self.NIGHT_COLOR[1]) * progress)
+        b = int(self.NIGHT_COLOR[2] + (self.DAY_COLOR[2] - self.NIGHT_COLOR[2]) * progress)
+        ambient_color = (r, g, b)
+        
+        self.fog.fill(ambient_color)
+        
+        if progress >= 1.0:
+            return
+            
         world_mouse = self.get_world_mouse_pos()
-        dx = world_mouse.x - self.player.position.x
-        dy = world_mouse.y - self.player.position.y
-        angle = math.degrees(math.atan2(-dy, dx))
-        rotated_light = pygame.transform.rotate(self.base_light, angle)
-        cam_x, cam_y = self.map_layer.get_center_offset()
-        screen_player_x = (self.player.position.x - cam_x) * self.map_layer.zoom
-        screen_player_y = (self.player.position.y - cam_y) * self.map_layer.zoom
-        light_rect = rotated_light.get_rect(center=(int(screen_player_x), int(screen_player_y)))
+        
+        direction = world_mouse - self.player.position
+        
+        angle = math.degrees(math.atan2(-direction.y, direction.x))
+        approx_angle = int(angle // 5) * 5
+        
+        if approx_angle not in self.light_cache:
+            self.light_cache[approx_angle] = pygame.transform.rotate(self.base_light, approx_angle)
+            
+        rotated_light = self.light_cache[approx_angle]
+        
+        cam_pos = pygame.math.Vector2(self.map_layer.view_rect.topleft)
+        
+        screen_player_pos = (self.player.position - cam_pos) * self.map_layer.zoom
+        
+        light_rect = rotated_light.get_rect(center=(int(screen_player_pos.x), int(screen_player_pos.y)))
+        
         self.fog.blit(rotated_light, light_rect, special_flags=pygame.BLEND_RGBA_ADD)
         screen.blit(self.fog, (0, 0), special_flags=pygame.BLEND_MULT)
 
@@ -191,13 +257,16 @@ class GameWorld:
     def draw_xp_bar(self, screen):
         if self.player.is_alive:
             pygame.draw.rect(screen, (40, 40, 40), (0, 0, SCREEN_WIDTH, 15))
-            xp_w = int(SCREEN_WIDTH * (self.player.current_xp / self.player.xp_to_next_level))
+            xp_ratio = min(1.0, self.player.current_xp / max(1, self.player.xp_to_next_level))
+            xp_w = int(SCREEN_WIDTH * xp_ratio)
             pygame.draw.rect(screen, (0, 150, 255), (0, 0, xp_w, 15))
             pygame.draw.line(screen, (0, 0, 0), (0, 15), (SCREEN_WIDTH, 15), 2)
+            
             lvl_str = f"LVL {self.player.level}"
             shadow_text = self.ui_font.render(lvl_str, True, (0, 0, 0))
             shadow_rect = shadow_text.get_rect(topright=(SCREEN_WIDTH - 18, 27))
             screen.blit(shadow_text, shadow_rect)
+            
             lvl_text = self.ui_font.render(lvl_str, True, (255, 255, 255))
             lvl_rect = lvl_text.get_rect(topright=(SCREEN_WIDTH - 20, 25))
             screen.blit(lvl_text, lvl_rect)

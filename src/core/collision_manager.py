@@ -8,8 +8,8 @@ class CollisionManager:
     def update(self, dt):
         self._handle_bullet_enemy_collisions()
         self._handle_player_enemy_collisions(dt)
-
         self.check_wall_collisions(self.world.player)
+        
         for enemy in self.world.enemies:
             if getattr(enemy, 'is_alive', True) and getattr(enemy, 'active', True):
                 self.check_wall_collisions(enemy)
@@ -18,16 +18,16 @@ class CollisionManager:
         for bullet in self.world.bullets:
             if not getattr(bullet, 'active', True):
                 continue
-
+                
             if bullet.hitbox.collidelist(self.world.collisions) != -1:
-                bullet.kill()
+                bullet.active = False  
                 continue
-
+                
             for enemy in self.world.enemies:
                 if getattr(enemy, 'is_alive', True) and getattr(enemy, 'active', True):
                     if bullet.hitbox.colliderect(enemy.hitbox):
                         enemy.take_damage(getattr(self.world.player, 'damage', 1))
-                        bullet.kill()
+                        bullet.active = False
                         
                         if not enemy.is_alive:
                             xp_amount = getattr(enemy, 'xp_value', 10)
@@ -41,13 +41,12 @@ class CollisionManager:
 
         for enemy in self.world.enemies:
             if getattr(enemy, 'is_alive', True) and getattr(enemy, 'active', True):
-                
                 if self.world.player.hitbox.colliderect(enemy.hitbox):
                     self.world.player.take_damage(enemy.damage * dt)
 
                 overlap_vec = enemy.position - self.world.player.position
                 dist = overlap_vec.length()
-
+                
                 min_dist = 12
 
                 if 0 < dist < min_dist:
@@ -68,18 +67,22 @@ class CollisionManager:
                 overlap_right = wall.right - obj.hitbox.left
                 overlap_top = obj.hitbox.bottom - wall.top
                 overlap_bottom = wall.bottom - obj.hitbox.top
-
+                
                 min_overlap = min(overlap_left, overlap_right, overlap_top, overlap_bottom)
-
+                
+                correction = pygame.math.Vector2(0, 0)
+                
                 if min_overlap == overlap_left:
-                    obj.position.x -= overlap_left
+                    correction.x = -overlap_left
                 elif min_overlap == overlap_right:
-                    obj.position.x += overlap_right
+                    correction.x = overlap_right
                 elif min_overlap == overlap_top:
-                    obj.position.y -= overlap_top
+                    correction.y = -overlap_top
                 elif min_overlap == overlap_bottom:
-                    obj.position.y += overlap_bottom
-
+                    correction.y = overlap_bottom
+                    
+                obj.position += correction
+                
                 obj.hitbox.center = (int(obj.position.x), int(obj.position.y))
                 if hasattr(obj, 'rect'):
                     obj.rect.center = obj.hitbox.center

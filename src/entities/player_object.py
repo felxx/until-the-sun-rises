@@ -28,7 +28,7 @@ class PlayerObject(CharacterObject):
         self.xp_to_next_level = 100
 
     def die(self):
-        self.kill()
+        self.active = False
         pygame.mixer.music.stop()
         pygame.mixer.stop()
 
@@ -51,10 +51,9 @@ class PlayerObject(CharacterObject):
         else:
             self.frame_index = 0
 
-        rel_x = world_mouse.x - self.position.x
-        rel_y = world_mouse.y - self.position.y
-        self.angle = math.degrees(math.atan2(-rel_y, rel_x)) + 90
-
+        direction = world_mouse - self.position
+        
+        self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
         self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
 
         if self.damage_flash_timer > 0:
