@@ -46,7 +46,8 @@ class CollisionManager:
 
                 overlap_vec = enemy.position - self.world.player.position
                 dist = overlap_vec.length()
-                min_dist = 12.0
+                
+                min_dist = 12
 
                 if 0 < dist < min_dist:
                     push_factor = min_dist - dist

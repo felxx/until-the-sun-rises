@@ -9,6 +9,9 @@ class GameObject(ABC):
         self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
         self.rect = self.image.get_rect(center=self.position)
 
+    def kill(self):
+        self.active = False
+
     @abstractmethod
-    def update(self, dt):
+    def update(self, dt, *args, **kwargs):
         pass
