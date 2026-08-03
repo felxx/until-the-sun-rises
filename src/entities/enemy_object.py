@@ -83,7 +83,7 @@ class EnemyObject(CharacterObject):
         direction = self.target.position - self.position
         dist = direction.length()
 
-        if dist > (self.radius + self.target.radius):
+        if dist > 1.0:
             self.velocity = direction
             self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 270
         else:
