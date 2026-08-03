@@ -19,12 +19,13 @@ class BulletObject(DynamicObject):
             BulletObject._sprite_sheet = SpriteSheet(bullet_paths, 32)
 
         direction = pygame.math.Vector2(target_pos) - self.position
-
+        
         if direction.length() > 0:
             self.velocity = direction.normalize() * self.speed
             self.angle = math.degrees(math.atan2(-self.velocity.y, self.velocity.x)) - 90
         else:
             self.velocity = pygame.math.Vector2(0, 0)
+            self.angle = 0
 
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 90
 
@@ -38,10 +39,9 @@ class BulletObject(DynamicObject):
 
     def update(self, dt, world_mouse=None):
         super().update(dt)
-
         self.frame_index = (self.frame_index + 15 * dt) % 4
         self.image = BulletObject._sprite_sheet.get_frame(self.frame_index, self.angle)
-
+        
         distance = self.position.distance_to(self.start_pos)
         if distance > self.max_range:
-            self.kill()
+            self.active = False

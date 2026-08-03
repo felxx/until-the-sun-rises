@@ -1,17 +1,15 @@
 import math
 import random
 import pygame
-
 from src.entities.character_object import CharacterObject
 from src.core.resource_manager import ResourceManager
 from src.core.sprite_sheet import SpriteSheet
-
 
 class EnemyObject(CharacterObject):
     _walk_sheets = {}
     _death_sheets = {}
     _zombie_sounds = []
-
+    
     ENEMY_PROPERTIES = {
         1: {"speed": 100, "max_health": 5, "damage": 20, "xp_value": 10},
         2: {"speed": 80, "max_health": 10, "damage": 40, "xp_value": 25},
@@ -20,7 +18,6 @@ class EnemyObject(CharacterObject):
 
     def __init__(self, position, target, level=1):
         properties = self.ENEMY_PROPERTIES.get(level, self.ENEMY_PROPERTIES[1])
-
         super().__init__(
             position=position,
             speed=properties["speed"],
@@ -29,20 +26,18 @@ class EnemyObject(CharacterObject):
             hitbox_size=(14, 14),
             combat_radius=15
         )
-
         self.xp_value = properties["xp_value"]
         self.target = target
         self.level = level
-
         self.angle = 0
         self.death_finished = False
         self.death_timer = 0
         self.should_remove = False
-
+        
         self._setup_sounds()
         self.sound_timer = random.uniform(1.0, 4.0)
-
         self._setup_sprites()
+        
         self.frame_index = 0
         self.animation_speed = 10
         self.image = self._walk_sheets[self.level].get_frame(0, 0)
@@ -66,16 +61,14 @@ class EnemyObject(CharacterObject):
         if self.level not in self._walk_sheets:
             if self.level == 3:
                 walk_paths = [f"assets/images/enemy/lv_3/walk_00{i}.png" for i in range(9)]
-                death_paths = [f"assets/images/enemy/lv_3/daeth_00{i}.png" for i in range(6)]
+                death_paths = [f"assets/images/enemy/lv_3/death_00{i}.png" for i in range(6)]
                 walk_display_size = int(self.radius * 1.5)
                 death_display_size = int(self.radius * 3.2)
-
             elif self.level == 2:
                 walk_paths = [f"assets/images/enemy/lv_2/walk_00{i}.png" for i in range(9)]
                 death_paths = [f"assets/images/enemy/lv_2/death_00{i}.png" for i in range(6)]
                 walk_display_size = int(self.radius * 2.4)
                 death_display_size = int(self.radius * 2.4)
-
             else:
                 walk_paths = [f"assets/images/enemy/lv_1/walk_00{i}.png" for i in range(9)]
                 death_paths = [f"assets/images/enemy/lv_1/death_00{i}.png" for i in range(6)]
@@ -97,7 +90,7 @@ class EnemyObject(CharacterObject):
         direction = self.target.position - self.position
         dist = direction.length()
 
-        if dist > (self.radius + self.target.radius):
+        if dist > 1.0:
             self.velocity = direction
             self.angle = math.degrees(math.atan2(-direction.y, direction.x)) - 270
         else:
@@ -105,7 +98,6 @@ class EnemyObject(CharacterObject):
 
     def update(self, dt, world_mouse=None):
         super().update(dt)
-
         if not self.is_alive:
             self._update_death_state(dt)
             sheet = self._death_sheets[self.level]
@@ -128,11 +120,9 @@ class EnemyObject(CharacterObject):
             self.image.set_alpha(alpha)
 
     def _update_ambient_sounds(self, dt):
-        """Gerencia o tempo e a probabilidade de sorteio dos sons de fundo"""
         self.sound_timer -= dt
         if self.sound_timer <= 0:
             self.sound_timer = random.uniform(4.0, 8.0)
-
             if random.random() < 0.20 and EnemyObject._zombie_sounds:
                 chosen_sound = random.choice(EnemyObject._zombie_sounds)
                 chosen_sound.play()
@@ -144,8 +134,8 @@ class EnemyObject(CharacterObject):
         self.death_timer += dt
         if self.death_timer >= 5.0:
             self.should_remove = True
-            self.kill()
-
+            self.active = False
+            
         if not self.death_finished:
             self.frame_index += self.animation_speed * dt
             if self.frame_index >= 5:
