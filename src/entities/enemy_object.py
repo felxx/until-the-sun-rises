@@ -61,7 +61,7 @@ class EnemyObject(CharacterObject):
         if self.level not in self._walk_sheets:
             if self.level == 3:
                 walk_paths = [f"assets/images/enemy/lv_3/walk_00{i}.png" for i in range(9)]
-                death_paths = [f"assets/images/enemy/lv_3/death_00{i}.png" for i in range(6)]
+                death_paths = [f"assets/images/enemy/lv_3/daeth_00{i}.png" for i in range(6)]
                 walk_display_size = int(self.radius * 1.5)
                 death_display_size = int(self.radius * 3.2)
             elif self.level == 2:
