@@ -26,6 +26,7 @@ class PlayerObject(CharacterObject):
         self.current_xp = 0
         self.level = 1
         self.xp_to_next_level = 100
+        self.score = 0
 
     def die(self):
         self.active = False

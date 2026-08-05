@@ -33,6 +33,8 @@ class CollisionManager:
                             xp_amount = getattr(enemy, 'xp_value', 10)
                             xp = XPObject(enemy.position, self.world.player, xp_value=xp_amount)
                             self.world.add_xp(xp)
+
+                            self.world.player.score += xp_amount * 10
                         break
 
     def _handle_player_enemy_collisions(self, dt):

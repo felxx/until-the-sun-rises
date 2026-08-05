@@ -50,6 +50,10 @@ class GameManager:
         game_over_text = self.font_large.render("GAME OVER", True, (255, 50, 50))
         text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
         self.screen.blit(game_over_text, text_rect)
+
+        score_text = self.font_small.render(f"Pontuação Final: {self.game_world.player.score}", True, (255, 255, 255))
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+        self.screen.blit(score_text, score_rect)
         
         restart_text = self.font_small.render("Pressione 'R' para reiniciar", True, (255, 255, 255))
         restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))
@@ -63,6 +67,11 @@ class GameManager:
         victory_text = self.font_large.render("VOCÊ SOBREVIVEU!", True, (50, 200, 50))
         text_rect = victory_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
         self.screen.blit(victory_text, text_rect)
+
+        final_score = self.game_world.player.score + 5000
+        score_text = self.font_small.render(f"Pontuação Final: {final_score}", True, (0, 0, 0))
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+        self.screen.blit(score_text, score_rect)
         
         restart_text = self.font_small.render("Pressione 'R' para jogar novamente", True, (0, 0, 0))
         restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))

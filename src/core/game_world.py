@@ -47,6 +47,7 @@ class GameWorld:
         self.spawn_timer = 0
         self.shoot_timer = 0
         self.game_time = 0
+        self.score = 0
         
         self.upgrade_manager = UpgradeManager(self.player)
         self.collision_manager = CollisionManager(self)
@@ -212,6 +213,7 @@ class GameWorld:
         self._draw_fog(screen)
         self.draw_health_bar(screen)
         self.draw_xp_bar(screen)
+        self.draw_score(screen)
         self.upgrade_manager.draw(screen, self.get_screen_mouse_pos)
 
     def _draw_fog(self, screen):
@@ -270,6 +272,23 @@ class GameWorld:
             lvl_text = self.ui_font.render(lvl_str, True, (255, 255, 255))
             lvl_rect = lvl_text.get_rect(topright=(SCREEN_WIDTH - 20, 25))
             screen.blit(lvl_text, lvl_rect)
+
+    def draw_score(self, screen):
+        score_str = f"SCORE: {self.player.score}"
+        
+        margin_x = 20
+        margin_y_from_bottom = 35
+        
+        pos_x = margin_x
+        pos_y = SCREEN_HEIGHT - margin_y_from_bottom
+
+        shadow_text = self.ui_font.render(score_str, True, (0, 0, 0))
+        shadow_rect = shadow_text.get_rect(topleft=(pos_x + 2, pos_y + 2))
+        screen.blit(shadow_text, shadow_rect)
+        
+        score_text = self.ui_font.render(score_str, True, (255, 255, 255))
+        score_rect = score_text.get_rect(topleft=(pos_x, pos_y))
+        screen.blit(score_text, score_rect)
 
     def handle_shoot(self, dt, events, world_mouse):
         self.shoot_timer += dt

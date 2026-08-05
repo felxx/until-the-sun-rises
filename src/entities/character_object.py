@@ -23,7 +23,6 @@ class CharacterObject(DynamicObject, ABC):
                 self.die()
 
     def heal(self, amount):
-        """Método utilitário para restaurar vida sem ultrapassar max_health"""
         if self.is_alive:
             self.current_health = min(self.max_health, self.current_health + amount)
 
