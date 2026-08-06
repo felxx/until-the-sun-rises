@@ -1,25 +1,31 @@
 import math
 import pygame
 
+from core.animation import Animation
+from core.animation_cache import AnimationCache
 from src.entities.character_object import CharacterObject
 from src.core.constants import *
 from src.core.resource_manager import ResourceManager
-from src.core.sprite_sheet import SpriteSheet
 
 
 class PlayerObject(CharacterObject):
+    _player_anim_data = None
+
     def __init__(self, position, speed, max_health=100, damage=5):
         super().__init__(position, speed, max_health=max_health, damage=damage, hitbox_size=(10, 10), combat_radius=8)
 
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
 
-        rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 9)]
-        self.sprite_sheet = SpriteSheet(rifle_paths, 32)
+        if PlayerObject._player_anim_data is None:
+            rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 9)]
+            frames = [ResourceManager.get_image(p, 32) for p in rifle_paths]
+            PlayerObject._player_anim_data = AnimationCache(frames)
 
-        self.frame_index = 0
+        self.animation = Animation(PlayerObject._player_anim_data, fps=12)
+
         self.angle = 0
-        self.image = self.sprite_sheet.get_frame(0, 0)
+        self.image = self.animation.get_image(0)
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
@@ -47,21 +53,22 @@ class PlayerObject(CharacterObject):
         if not self.is_alive: return
         super().update(dt, world_mouse)
 
-        if self.velocity.length() > 0:
-            self.frame_index = (self.frame_index + 12 * dt) % 9
-        else:
-            self.frame_index = 0
-
         direction = world_mouse - self.position
-        
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
-        self.image = self.sprite_sheet.get_frame(self.frame_index, self.angle)
+
+    def render(self, dt):
+        if not self.is_alive: return
+
+        is_moving = self.velocity.length() > 0
+        self.animation.update(dt, is_playing=is_moving)
+
+        self.image = self.animation.get_image(self.angle)
 
         if self.damage_flash_timer > 0:
             self.image = self.image.copy()
             self.image.fill((255, 100, 100), special_flags=pygame.BLEND_RGB_MULT)
 
-        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
+        super().render(dt)
 
     def gain_xp(self, amount):
         if not self.is_alive: return

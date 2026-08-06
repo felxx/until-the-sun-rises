@@ -4,10 +4,10 @@ import pygame
 import pytmx
 import pyscroll
 
+from core.game_sprite import GameSprite
 from src.core.constants import *
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
-from src.core.sprite_manager import SpriteManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
@@ -111,7 +111,7 @@ class GameWorld:
 
     def add_entity(self, entity, logic_list):
         logic_list.append(entity)
-        visual = SpriteManager(entity)
+        visual = GameSprite(entity)
         self.all_sprites.add(visual)
 
     def add_xp(self, xp_entity):
@@ -140,7 +140,7 @@ class GameWorld:
             if obj.type == "spawn":
                 if obj.name == "player":
                     self.player = PlayerObject(pygame.math.Vector2(obj.x, obj.y), 125)
-                    self.all_sprites.add(SpriteManager(self.player))
+                    self.all_sprites.add(GameSprite(self.player))
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
         for obj in self.tmx_data.get_layer_by_name("collision_layer"):

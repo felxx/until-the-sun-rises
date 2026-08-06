@@ -1,13 +1,15 @@
 import math
 import random
 import pygame
+
+from core.animation import Animation
+from core.animation_cache import AnimationCache
 from src.entities.character_object import CharacterObject
 from src.core.resource_manager import ResourceManager
-from src.core.sprite_sheet import SpriteSheet
 
 class EnemyObject(CharacterObject):
-    _walk_sheets = {}
-    _death_sheets = {}
+    _walk_anim_cache = {}
+    _death_anim_cache = {}
     _zombie_sounds = []
     
     ENEMY_PROPERTIES = {
@@ -36,11 +38,14 @@ class EnemyObject(CharacterObject):
         
         self._setup_sounds()
         self.sound_timer = random.uniform(1.0, 4.0)
+
         self._setup_sprites()
+        self.walk_anim = Animation(self._walk_anim_cache[self.level], fps=10)
+        self.death_anim = Animation(self._death_anim_cache[self.level], fps=10, loop=False)
         
         self.frame_index = 0
         self.animation_speed = 10
-        self.image = self._walk_sheets[self.level].get_frame(0, 0)
+        self.image = self._walk_anim_cache[self.level].get_frame(0, 0)
         self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
@@ -58,28 +63,27 @@ class EnemyObject(CharacterObject):
                     EnemyObject._zombie_sounds.append(sound)
 
     def _setup_sprites(self):
-        if self.level not in self._walk_sheets:
+        if self.level not in self._walk_anim_cache:
             if self.level == 3:
-                walk_paths = [f"assets/images/enemy/lv_3/walk_00{i}.png" for i in range(9)]
-                death_paths = [f"assets/images/enemy/lv_3/daeth_00{i}.png" for i in range(6)]
-                walk_display_size = int(self.radius * 1.5)
-                death_display_size = int(self.radius * 3.2)
+                w_paths = [f"assets/images/enemy/lv_3/walk_00{i}.png" for i in range(9)]
+                d_paths = [f"assets/images/enemy/lv_3/daeth_00{i}.png" for i in range(6)]
+                w_size, d_size = int(self.radius * 1.5), int(self.radius * 3.2)
             elif self.level == 2:
-                walk_paths = [f"assets/images/enemy/lv_2/walk_00{i}.png" for i in range(9)]
-                death_paths = [f"assets/images/enemy/lv_2/death_00{i}.png" for i in range(6)]
-                walk_display_size = int(self.radius * 2.4)
-                death_display_size = int(self.radius * 2.4)
+                w_paths = [f"assets/images/enemy/lv_2/walk_00{i}.png" for i in range(9)]
+                d_paths = [f"assets/images/enemy/lv_2/death_00{i}.png" for i in range(6)]
+                w_size, d_size = int(self.radius * 2.4), int(self.radius * 2.4)
             else:
-                walk_paths = [f"assets/images/enemy/lv_1/walk_00{i}.png" for i in range(9)]
-                death_paths = [f"assets/images/enemy/lv_1/death_00{i}.png" for i in range(6)]
-                walk_display_size = int(self.radius * 2.2)
-                death_display_size = int(self.radius * 2.2)
+                w_paths = [f"assets/images/enemy/lv_1/walk_00{i}.png" for i in range(9)]
+                d_paths = [f"assets/images/enemy/lv_1/death_00{i}.png" for i in range(6)]
+                w_size, d_size = int(self.radius * 2.2), int(self.radius * 2.2)
 
-            EnemyObject._walk_sheets[self.level] = SpriteSheet(walk_paths, walk_display_size)
-            EnemyObject._death_sheets[self.level] = SpriteSheet(death_paths, death_display_size)
+            w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths]
+            d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths]
+
+            EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
+            EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
 
     def die(self):
-        self.frame_index = 0
         self.velocity = pygame.math.Vector2(0, 0)
 
     def resolve_behavior(self, dt):
@@ -98,15 +102,31 @@ class EnemyObject(CharacterObject):
 
     def update(self, dt, world_mouse=None):
         super().update(dt)
-        if not self.is_alive:
-            self._update_death_state(dt)
-            sheet = self._death_sheets[self.level]
-        else:
-            self._update_alive_state(dt)
-            self._update_ambient_sounds(dt)
-            sheet = self._walk_sheets[self.level]
 
-        self.image = sheet.get_frame(self.frame_index, self.angle)
+        if not self.is_alive:
+            self.death_timer += dt
+            if self.death_timer >= 5.0:
+                self.should_remove = True
+                self.active = False
+        else:
+            self.sound_timer -= dt
+            if self.sound_timer <= 0:
+                self.sound_timer = random.uniform(4.0, 8.0)
+                if random.random() < 0.20 and EnemyObject._zombie_sounds:
+                    random.choice(EnemyObject._zombie_sounds).play()
+
+    def render(self, dt):
+        if self.is_alive:
+            self.walk_anim.update(dt)
+            self.image = self.walk_anim.get_image(self.angle)
+        else:
+            self.death_anim.update(dt)
+            self.image = self.death_anim.get_image(self.angle)
+
+            if self.death_timer > 3.0:
+                alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
+                self.image = self.image.copy()
+                self.image.set_alpha(alpha)
 
         if self.damage_flash_timer > 0:
             self.image = self.image.copy()
@@ -114,10 +134,7 @@ class EnemyObject(CharacterObject):
             flash_surf.fill((255, 0, 0))
             self.image.blit(flash_surf, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
 
-        if not self.is_alive and self.death_timer > 3.0:
-            alpha = max(0, 255 - int((self.death_timer - 3.0) * 127.5))
-            self.image = self.image.copy()
-            self.image.set_alpha(alpha)
+        super().render(dt)
 
     def _update_ambient_sounds(self, dt):
         self.sound_timer -= dt
