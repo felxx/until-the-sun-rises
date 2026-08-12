@@ -1,4 +1,4 @@
-from core.animation_cache import AnimationCache
+from src.core.animation_cache import AnimationCache
 
 
 class Animation:

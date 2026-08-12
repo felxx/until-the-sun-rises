@@ -19,4 +19,4 @@ class GameObject(ABC):
         pass
 
     def render(self, dt):
-        self.rect.center = (int(self.position.x), int(self.position.y))
+        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))

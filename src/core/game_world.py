@@ -4,7 +4,7 @@ import pygame
 import pytmx
 import pyscroll
 
-from core.game_sprite import GameSprite
+from src.core.game_sprite import GameSprite
 from src.core.constants import *
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
