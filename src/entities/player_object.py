@@ -24,8 +24,6 @@ class PlayerObject(CharacterObject):
         self.anim_set.add_animation("rifle", Animation(PlayerObject._player_anim_data, fps=12))
         
         self.angle = 0
-        self.image = self.anim_set.update_and_get_image(0, self.angle, is_playing=False)
-        self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
         self.current_xp = 0
         self.level = 1

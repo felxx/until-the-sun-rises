@@ -29,8 +29,6 @@ class BulletObject(DynamicObject):
             self.velocity = pygame.math.Vector2(0, 0)
             self.angle = 0
             
-        self.image = self.anim_set.update_and_get_image(0, self.angle)
-        self.rect = self.image.get_rect(center=self.position)
         self._layer = 3
 
     def resolve_behavior(self, dt):

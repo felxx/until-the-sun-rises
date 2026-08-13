@@ -46,8 +46,6 @@ class EnemyObject(CharacterObject):
         
         self.frame_index = 0
         self.animation_speed = 10
-        self.image = self.anim_set.update_and_get_image(0, self.angle)
-        self.rect = self.image.get_rect(center=self.position)
         self._layer = 2
 
     def _setup_sounds(self):
