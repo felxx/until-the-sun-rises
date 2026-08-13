@@ -540,12 +540,6 @@ class GameManager:
 
             "",
 
-            "Fundo do Menu:",
-
-            "Chamas Azuis Algorítmicas",
-
-            "",
-
             "Obrigado por jogar!"
 
         ]
