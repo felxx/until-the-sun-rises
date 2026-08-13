@@ -113,5 +113,4 @@ class EnemyObject(CharacterObject):
                     random.choice(EnemyObject._zombie_sounds).play()
 
     def render(self, dt):
-        self.image = self.anim_set.update_and_get_image(dt, self.angle)
-        super().render(dt)
+        return self.anim_set.update_and_get_image(dt, self.angle)

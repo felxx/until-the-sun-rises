@@ -8,9 +8,6 @@ class GameObject(ABC):
         self.position = pygame.math.Vector2(position)
         self.angle = 0
 
-        self.image = pygame.Surface((32, 32), pygame.SRCALPHA)
-        self.rect = self.image.get_rect(center=self.position)
-
     def kill(self):
         self.active = False
 
@@ -18,5 +15,6 @@ class GameObject(ABC):
     def update(self, dt, *args, **kwargs):
         pass
 
-    def render(self, dt):
-        self.rect = self.image.get_rect(center=(int(self.position.x), int(self.position.y)))
+    @abstractmethod
+    def render(self, dt) -> pygame.Surface:
+        pass

@@ -205,7 +205,7 @@ class GameWorld:
                 self.player.gain_xp(gem.xp_value)
                 gem.active = False
                 
-        self.all_sprites.center(self.player.rect.center)
+        self.all_sprites.center(self.player.position)
         self.all_sprites.update(dt)
 
     def draw(self, screen):
