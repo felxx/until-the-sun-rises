@@ -20,11 +20,12 @@ class DynamicObject(GameObject, ABC):
             self.velocity = self.velocity.normalize() * self.speed
 
         self.position += self.velocity * dt
-
         self.hitbox.center = self.position
 
-        if hasattr(self, 'rect'):
-            self.rect.center = self.hitbox.center
+        self.render(dt)
+
+        if self.sprite.image:
+            self.sprite.rect = self.sprite.image.get_rect(center=self.position)
 
     @abstractmethod
     def resolve_behavior(self, dt):

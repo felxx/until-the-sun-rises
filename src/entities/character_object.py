@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import pygame
+
 from src.entities.dynamic_object import DynamicObject
 
 
@@ -14,11 +16,15 @@ class CharacterObject(DynamicObject, ABC):
 
     def take_damage(self, amount):
         if self.is_alive:
-            self.current_health -= amount
+            self.current_health = max(0, self.current_health - amount)
             self.damage_flash_timer = 0.1
             if self.current_health <= 0:
                 self.is_alive = False
                 self.die()
+
+    def heal(self, amount):
+        if self.is_alive:
+            self.current_health = min(self.max_health, self.current_health + amount)
 
     @abstractmethod
     def die(self):
