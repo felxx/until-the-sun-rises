@@ -23,10 +23,10 @@ python -m src.main
 
 ## To-do (3° Trimestre)
 
-- [ ] Tela de menu, com as opções de iniciar, ranking de jogadores, opções, créditos e sair
+- [x] Tela de menu, com as opções de iniciar, ranking de jogadores, créditos e sair
+- [x] Menu de pause quando o jogador pressionar esc, onde terá as opções de reiniciar, configurações e sair.
+- [ ] Adicionar fog nos limites do mapa e aumentar as bordas
 - [ ] Tela de encerramento, onde a manhã chega, os zumbis morrem e sobe os créditos do jogo
-- [ ] Menu de pause quando o jogador pressionar esc, onde terá as opções de reiniciar, configurações e sair.
-- [ ] Tela de configuração, pra principalmente poder ajustar o áudio
 - [ ] Funcionalidade de Score e Leaderboard, onde deverá salvar o nome do jogador
 - [ ] Inteligência artificial nos zumbis, para que eles contornem objetos.
 - [ ] Adição de mais habilidades de level up e itens consumíveis (como medkits para o jogador se curar)
@@ -35,6 +35,7 @@ python -m src.main
 
 ## To-do (APENAS SE SOBRAR MUITO TEMPO)
 
+- [ ] Tela de configuração para, principalmente, ajuste de áudio
 - [ ] Adição de boss fights (3 no total: 1° no minuto 3:00, 2° no minuto 6:00 e a 3° no minuto 9:00)
 - [ ] Inimigos especiais
 - [ ] Mais opções de arsenal
