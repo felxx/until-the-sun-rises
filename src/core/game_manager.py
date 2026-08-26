@@ -110,6 +110,7 @@ class GameManager:
         self.flame_effect = FlameManager(width=160, height=120)
         self.state = "MENU"
         
+        self.font_death = pygame.font.Font(None, 82)
         self.font_title = pygame.font.Font(None, 64)
         self.font_medium = pygame.font.Font(None, 36)
         self.font_small = pygame.font.Font(None, 24)
@@ -121,15 +122,16 @@ class GameManager:
         self.score_saved = False
         self.game_world = None
 
+        self.death_timer = 0.0
+        self.death_duration = 3.5  
+
     @property
     def menu_options(self):
-        """Retorna dinamicamente as opções do menu conforme o estado do jogo."""
         if self.game_world is not None:
             return ["CONTINUAR", "NOVO JOGO", "HISTÓRICO", "CRÉDITOS", "SAIR"]
         return ["JOGAR", "HISTÓRICO", "CRÉDITOS", "SAIR"]
 
     def start_game(self):
-        """Inicia um novo jogo do zero."""
         try:
             self.game_world = GameWorld()
             self.state = "PLAYING"
@@ -137,7 +139,6 @@ class GameManager:
             print(f"Erro ao criar GameWorld: {e}")
 
     def resume_game(self):
-        """Retorna ao jogo existente sem resetar o mundo."""
         if self.game_world:
             self.state = "PLAYING"
         else:
@@ -165,8 +166,16 @@ class GameManager:
                         self.current_score = getattr(self.game_world, 'score', 0)
                         self.player_name_input = ""
                         self.score_saved = False
-                        self.game_world = None  # Limpa o mundo ao morrer
-                        self.state = "GAMEOVER"
+                        self.death_timer = 0.0
+                        self.state = "DIED_ANIMATION"
+
+            elif self.state == "DIED_ANIMATION":
+                self.death_timer += dt
+                if self.death_timer >= self.death_duration:
+                    self.game_world = None  
+                    self.state = "GAMEOVER"
+                else:
+                    self.draw_death_screen()
 
             elif self.state == "GAMEOVER":
                 self.draw_game_over_screen()
@@ -208,12 +217,16 @@ class GameManager:
                             self.selected_index = idx
                             self.execute_menu_option()
 
-            # --- APERTAR ESC DURANTE O JOGO PAUSA E VAI PARA O MENU ---
             elif self.state == "PLAYING":
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.selected_index = 0
                         self.state = "MENU"
+
+            elif self.state == "DIED_ANIMATION":
+                if event.type == pygame.KEYDOWN and event.key in (pygame.K_RETURN, pygame.K_ESCAPE, pygame.K_SPACE):
+                    self.game_world = None
+                    self.state = "GAMEOVER"
 
             elif self.state in ("SCORES", "CREDITS"):
                 if event.type == pygame.KEYDOWN:
@@ -235,7 +248,6 @@ class GameManager:
 
     def execute_menu_option(self):
         if self.game_world is not None:
-            # Menu de Pause (Com partida em andamento)
             if self.selected_index == 0:
                 self.resume_game()
             elif self.selected_index == 1:
@@ -247,7 +259,6 @@ class GameManager:
             elif self.selected_index == 4:
                 self.running = False
         else:
-            # Menu Inicial (Sem partida)
             if self.selected_index == 0:
                 self.start_game()
             elif self.selected_index == 1:
@@ -281,6 +292,36 @@ class GameManager:
             
             text_surf = self.font_medium.render(option, True, color)
             self.screen.blit(text_surf, text_surf.get_rect(center=rect.center))
+
+    def draw_death_screen(self):
+        """Renderiza a animação de morte em estilo Souls-like."""
+        if self.game_world:
+            self.game_world.draw(self.screen)
+
+        progress = min(1.0, self.death_timer / (self.death_duration * 0.7))
+        alpha = int(progress * 220)
+        
+        dark_overlay = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        dark_overlay.fill((0, 0, 0, alpha))
+        self.screen.blit(dark_overlay, (0, 0))
+
+        banner_height = 130
+        banner = pygame.Surface((self.width, banner_height), pygame.SRCALPHA)
+        banner.fill((10, 0, 0, min(230, alpha)))
+        self.screen.blit(banner, (0, (self.height // 2) - (banner_height // 2)))
+
+        text_alpha = int(min(255, (self.death_timer / 1.0) * 255))
+        
+        scale = 1.0 + (self.death_timer / self.death_duration) * 0.15
+        
+        base_surf = self.font_death.render("VOCÊ MORREU", True, (180, 20, 20))
+        scaled_w = int(base_surf.get_width() * scale)
+        scaled_h = int(base_surf.get_height() * scale)
+        text_surf = pygame.transform.smoothscale(base_surf, (scaled_w, scaled_h))
+        text_surf.set_alpha(text_alpha)
+
+        rect = text_surf.get_rect(center=(self.width // 2, self.height // 2 - 10))
+        self.screen.blit(text_surf, rect)
 
     def draw_scores_screen(self):
         self.flame_effect.draw(self.screen)
