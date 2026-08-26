@@ -21,14 +21,23 @@ pip install -r requirements.txt
 python -m src.main
 ```
 
-## Próximas Features
+## To-do (3° Trimestre)
 
-- [x] Implementação do mapa
-- [ ] Sistema de XP e Level Up (Escolha de Upgrades incluso)
-- [ ] Sistema de hordas
-- [ ] Implementação da condição de vitória (o amanhecer)
-- [ ] Aumentar a variedade do armamento
-- [ ] Novos tipos de zumbis
-- [ ] Adicionar boss fights ao jogo
-- [ ] Melhorias permanentes fora da run
-- [ ] Clima dinâmico
+- [ ] Tela de menu, com as opções de iniciar, ranking de jogadores, opções, créditos e sair
+- [ ] Tela de encerramento, onde a manhã chega, os zumbis morrem e sobe os créditos do jogo
+- [ ] Menu de pause quando o jogador pressionar esc, onde terá as opções de reiniciar, configurações e sair.
+- [ ] Tela de configuração, pra principalmente poder ajustar o áudio
+- [ ] Funcionalidade de Score e Leaderboard, onde deverá salvar o nome do jogador
+- [ ] Inteligência artificial nos zumbis, para que eles contornem objetos.
+- [ ] Adição de mais habilidades de level up e itens consumíveis (como medkits para o jogador se curar)
+- [ ] Balanceamento geral, levando em conta o tempo de 10 minutos para a vitória
+- [ ] Polimento visual geral
+
+## To-do (APENAS SE SOBRAR MUITO TEMPO)
+
+- [ ] Adição de boss fights (3 no total: 1° no minuto 3:00, 2° no minuto 6:00 e a 3° no minuto 9:00)
+- [ ] Inimigos especiais
+- [ ] Mais opções de arsenal
+- [ ] Barris explosivos no mapa
+- [ ] Aprimoramento no sistema de dano, incluindo floating damage
+- [ ] Sistema de recarga na arma
