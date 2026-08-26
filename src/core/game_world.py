@@ -1,17 +1,14 @@
 import math
 import random
-import pygame
 import pytmx
 import pyscroll
 
-from src.core.game_sprite import GameSprite
 from src.core.constants import *
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
-from src.entities.xp_object import XPObject
 
 class GameWorld:
     def __init__(self):
@@ -111,8 +108,23 @@ class GameWorld:
 
     def add_entity(self, entity, logic_list):
         logic_list.append(entity)
-        visual = GameSprite(entity)
-        self.all_sprites.add(visual)
+        self.all_sprites.add(entity.sprite)
+
+    def cleanup_dead_entities(self):
+        for i in range(len(self.enemies) - 1, -1, -1):
+            if not self.enemies[i].active:
+                self.enemies[i].sprite.kill()
+                self.enemies.pop(i)
+
+        for i in range(len(self.bullets) - 1, -1, -1):
+            if not self.bullets[i].active:
+                self.bullets[i].sprite.kill()
+                self.bullets.pop(i)
+
+        for i in range(len(self.xp_gems) - 1, -1, -1):
+            if not self.xp_gems[i].active:
+                self.xp_gems[i].sprite.kill()
+                self.xp_gems.pop(i)
 
     def add_xp(self, xp_entity):
         self.add_entity(xp_entity, self.xp_gems)
@@ -140,7 +152,7 @@ class GameWorld:
             if obj.type == "spawn":
                 if obj.name == "player":
                     self.player = PlayerObject(pygame.math.Vector2(obj.x, obj.y), 125)
-                    self.all_sprites.add(GameSprite(self.player))
+                    self.all_sprites.add(self.player.sprite)
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
         for obj in self.tmx_data.get_layer_by_name("collision_layer"):
@@ -186,25 +198,23 @@ class GameWorld:
             return
             
         world_mouse = self.get_world_mouse_pos()
-        
+
         self.player.update(dt, world_mouse)
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
-        
-        self.bullets = [b for b in self.bullets if getattr(b, 'active', True)]
-        self.enemies = [e for e in self.enemies if getattr(e, 'active', True)]
-        self.xp_gems = [g for g in self.xp_gems if getattr(g, 'active', True)]
-                
+
         self.spawn_enemy(dt)
         self.handle_shoot(dt, events, world_mouse)
         self.collision_manager.update(dt)
-        
+
         for gem in self.xp_gems:
-            if getattr(gem, 'active', True) and self.player.position.distance_to(gem.position) < 15:
+            if gem.active and self.player.position.distance_to(gem.position) < 15:
                 self.player.gain_xp(gem.xp_value)
                 gem.active = False
-                
+
+        self.cleanup_dead_entities()
+
         self.all_sprites.center(self.player.position)
         self.all_sprites.update(dt)
 

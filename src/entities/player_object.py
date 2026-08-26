@@ -51,11 +51,12 @@ class PlayerObject(CharacterObject):
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
 
     def render(self, dt):
-        if not self.is_alive:
-            return self.anim_set.update_and_get_image(dt, self.angle, is_playing=False)
-
         is_moving = self.velocity.length() > 0
-        return self.anim_set.update_and_get_image(dt, self.angle, is_playing=is_moving)
+        is_playing = is_moving if self.is_alive else False
+
+        img = self.anim_set.update_and_get_image(dt, self.angle, is_playing=is_playing)
+        if img:
+            self.sprite.image = img
 
     def gain_xp(self, amount):
         if not self.is_alive: return

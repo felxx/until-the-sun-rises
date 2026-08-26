@@ -30,4 +30,5 @@ class XPObject(DynamicObject):
         super().update(dt, world_mouse)
 
     def render(self, dt):
-        return self._xp_surface
+        img = self._xp_surface
+        self.sprite.image = img
