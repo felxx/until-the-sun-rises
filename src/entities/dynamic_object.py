@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.core.game_object import GameObject
+from src.entities.game_object import GameObject
 import pygame
 
 class DynamicObject(GameObject, ABC):
