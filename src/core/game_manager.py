@@ -33,8 +33,8 @@ def save_score(player_name, score):
 class GameManager:
     def __init__(self):
         pygame.init()
-        
-        self.window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
+        self.window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SCALED)
         pygame.display.set_caption("Until the Sun Rises")
         self.screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         
@@ -61,6 +61,9 @@ class GameManager:
         if self.game_world is not None:
             return ["CONTINUAR", "NOVO JOGO", "HISTÓRICO", "CRÉDITOS", "SAIR"]
         return ["JOGAR", "HISTÓRICO", "CRÉDITOS", "SAIR"]
+
+    def toggle_fullscreen(self):
+        pygame.display.toggle_fullscreen()
 
     def start_game(self):
         try:
@@ -135,6 +138,10 @@ class GameManager:
         for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                self.toggle_fullscreen()
+                continue
 
             elif self.state == "MENU":
                 if event.type == pygame.KEYDOWN:
