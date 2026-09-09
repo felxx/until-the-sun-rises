@@ -7,8 +7,8 @@ from src.screens.main_menu import MainMenuScreen
 class GameManager:
     def __init__(self):
         pygame.init()
-        
-        self.window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+
+        self.window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SCALED)
         pygame.display.set_caption("Until the Sun Rises")
         self.screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -24,6 +24,9 @@ class GameManager:
 
     def quit_game(self):
         self.running = False
+        
+    def toggle_fullscreen(self):
+        pygame.display.toggle_fullscreen()
 
     def run(self):
         while self.running:
@@ -33,6 +36,9 @@ class GameManager:
             for event in events:
                 if event.type == pygame.QUIT:
                     self.quit_game()
+
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    self.toggle_fullscreen()
 
             if self.current_scene:
                 self.current_scene.handle_events(events)
