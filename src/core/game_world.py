@@ -185,7 +185,7 @@ class GameWorld(GameScene):
 
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                from src.core.menus import MainMenuScreen
+                from src.screens.main_menu import MainMenuScreen
                 self.manager.change_scene(MainMenuScreen(self.manager, paused_world=self))
                 return
             
@@ -201,14 +201,14 @@ class GameWorld(GameScene):
     def update(self, dt):
         if not self.player.is_alive:
             pygame.mixer.music.stop()
-            from src.core.menus import DeathAnimationScene
-            self.manager.change_scene(DeathAnimationScene(self.manager, self))
+            from src.screens.death_screen import DeathScreen
+            self.manager.change_scene(DeathScreen(self.manager, self))
             return
             
         if getattr(self, 'is_victorious', False):
             pygame.mixer.music.stop()
-            from src.core.menus import InputScoreScene
-            self.manager.change_scene(InputScoreScene(self.manager, self.player.score + 5000, is_victory=True))
+            from src.screens.score_input import ScoreInputScreen
+            self.manager.change_scene(ScoreInputScreen(self.manager, self.player.score + 5000, is_victory=True))
             return
             
         self.game_time += dt

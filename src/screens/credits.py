@@ -20,14 +20,14 @@ class CreditsScreen(GameScene):
         if self.paused_world: self.paused_world.render(screen)
         self.draw_overlay(screen, 180)
         
-        title = self.font_title.render("CRÉDITOS", True, (255, 255, 255))
+        title = self.font_title.render("CRÉDITOS", True, (255, 0, 0))
         screen.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 50)))
 
-        credits_lines = ["Until the Sun Rises", "", "Desenvolvimento:", "Equipe do Projeto", "", "Obrigado por jogar!"]
+        credits_lines = ["Desenvolvimento:", "Eduardo Cruz", "Andrey Jodar", "Arthur Teruel", "Igor Felipe", " ", "Beta Testers:", "Caio Moreira", "Camila Prado", "Geovanny Fernando"]
         for idx, line in enumerate(credits_lines):
-            color = (255, 0, 0) if idx == 0 else (255, 255, 255)
+            color = 255, 255, 255
             surf = self.font_medium.render(line, True, color)
-            screen.blit(surf, surf.get_rect(center=(SCREEN_WIDTH // 2, 110 + (idx * 30))))
+            screen.blit(surf, surf.get_rect(center=(SCREEN_WIDTH // 2, 110 + (idx * 20))))
 
         back_txt = self.font_small.render("Pressione ENTER ou ESC para voltar", True, (200, 200, 200))
         screen.blit(back_txt, back_txt.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 20)))

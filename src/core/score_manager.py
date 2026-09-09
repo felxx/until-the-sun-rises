@@ -2,7 +2,7 @@ import json
 import os
 
 class ScoreManager:
-    def __init__(self, file_path="data\scores.json"):
+    def __init__(self, file_path="data/scores.json"):
         self.file_path = file_path
 
     def load_scores(self):
