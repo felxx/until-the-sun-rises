@@ -4,14 +4,16 @@ import pytmx
 import pyscroll
 
 from src.core.constants import *
+from src.core.game_scene import GameScene
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 
-class GameWorld:
-    def __init__(self):
+class GameWorld(GameScene):
+    def __init__(self, manager):
+        super().__init__(manager)
         self.tmx_data = pytmx.util_pygame.load_pygame("assets/maps/game-map.tmx")
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.orthographic.BufferedRenderer(
@@ -49,7 +51,7 @@ class GameWorld:
         self.upgrade_manager = UpgradeManager(self.player)
         self.collision_manager = CollisionManager(self)
         
-        pygame.mixer.music.load("assets/sounds/ambient_wind_boosted_300.mp3")
+        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
         pygame.mixer.music.play(-1)
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -176,13 +178,40 @@ class GameWorld:
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
             self.add_entity(enemy, self.enemies)
 
-    def update(self, dt, events):
-        if not self.player.is_alive or self.is_victorious:
+    def handle_events(self, events):
+        if getattr(self, 'upgrade_manager', None) and self.upgrade_manager.is_paused_for_levelup:
+            self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
+            return
+
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                from src.screens.main_menu import MainMenuScreen
+                self.manager.change_scene(MainMenuScreen(self.manager, paused_world=self))
+                return
+            
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.shoot_timer >= 0.3:
+                    self.shoot_timer = 0
+                    if hasattr(self.player, 'shoot_sfx'):
+                        self.player.shoot_sfx.play()
+                    world_mouse = self.get_world_mouse_pos()
+                    bullet = BulletObject(self.player.position, world_mouse)
+                    self.add_entity(bullet, self.bullets)
+
+    def update(self, dt):
+        if not self.player.is_alive:
             pygame.mixer.music.stop()
+            from src.screens.death_screen import DeathScreen
+            self.manager.change_scene(DeathScreen(self.manager, self))
+            return
+            
+        if getattr(self, 'is_victorious', False):
+            pygame.mixer.music.stop()
+            from src.screens.score_input import ScoreInputScreen
+            self.manager.change_scene(ScoreInputScreen(self.manager, self.player.score + 5000, is_victory=True))
             return
             
         self.game_time += dt
-        
         if self.game_time >= self.DAWN_DURATION:
             self.is_victorious = True
             for enemy in self.enemies:
@@ -194,31 +223,28 @@ class GameWorld:
             self.upgrade_manager.trigger_level_up()
             
         if self.upgrade_manager.is_paused_for_levelup:
-            self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
             return
-            
-        world_mouse = self.get_world_mouse_pos()
 
+        world_mouse = self.get_world_mouse_pos()
         self.player.update(dt, world_mouse)
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
-
+        
         self.spawn_enemy(dt)
-        self.handle_shoot(dt, events, world_mouse)
+        self.shoot_timer += dt
         self.collision_manager.update(dt)
-
+        
         for gem in self.xp_gems:
             if gem.active and self.player.position.distance_to(gem.position) < 15:
                 self.player.gain_xp(gem.xp_value)
                 gem.active = False
-
+                
         self.cleanup_dead_entities()
-
         self.all_sprites.center(self.player.position)
         self.all_sprites.update(dt)
 
-    def draw(self, screen):
+    def render(self, screen):
         self.all_sprites.draw(screen)
         self._draw_fog(screen)
         self.draw_health_bar(screen)
