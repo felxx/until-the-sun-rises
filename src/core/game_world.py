@@ -3,8 +3,8 @@ import random
 import pytmx
 import pyscroll
 
-from entities.energy_drink import EnergyDrink
-from entities.medical_kit import MedicalKit
+from src.entities.energy_drink import EnergyDrink
+from src.entities.medical_kit import MedicalKit
 from src.core.constants import *
 from src.core.game_scene import GameScene
 from src.core.collision_manager import CollisionManager
