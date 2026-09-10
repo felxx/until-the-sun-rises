@@ -114,4 +114,9 @@ class EnemyObject(CharacterObject):
 
     def render(self, dt):
         img = self.anim_set.update_and_get_image(dt, self.angle)
-        self.sprite.image = img
+        if img:
+            if getattr(self, 'damage_flash_timer', 0) > 0:
+                img = img.copy() 
+                img.fill((150, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                
+            self.sprite.image = img

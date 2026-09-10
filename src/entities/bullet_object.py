@@ -30,6 +30,7 @@ class BulletObject(DynamicObject):
             self.angle = 0
             
         self._layer = 3
+        self.hit_enemies = []
 
     def resolve_behavior(self, dt):
         pass
