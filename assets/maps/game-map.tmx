@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="176">
+<map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="128" height="128" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="187">
  <tileset firstgid="1" name="Zombie Apocalypse Tileset Reference" tilewidth="16" tileheight="16" tilecount="846" columns="47">
   <image source="../images/zombie-tileset.png" width="764" height="300"/>
  </tileset>
@@ -659,7 +659,7 @@
   <object id="85" name="zombie" type="spawn" x="262.5" y="731.333">
    <point/>
   </object>
-  <object id="86" name="zombie" type="spawn" x="615.5" y="971.5">
+  <object id="86" name="zombie" type="spawn" x="664.167" y="985.5">
    <point/>
   </object>
   <object id="129" name="zombie" type="spawn" x="312.167" y="885.333">
@@ -684,6 +684,36 @@
    <point/>
   </object>
   <object id="96" name="zombie" type="spawn" x="841" y="665.833">
+   <point/>
+  </object>
+  <object id="176" name="consumable" type="spawn" x="538.167" y="938.833">
+   <point/>
+  </object>
+  <object id="185" name="consumable" type="spawn" x="742.833" y="764.167">
+   <point/>
+  </object>
+  <object id="177" name="consumable" type="spawn" x="835.5" y="843">
+   <point/>
+  </object>
+  <object id="178" name="consumable" type="spawn" x="920" y="954.5">
+   <point/>
+  </object>
+  <object id="179" name="consumable" type="spawn" x="1002.5" y="731">
+   <point/>
+  </object>
+  <object id="180" name="consumable" type="spawn" x="920.5" y="539">
+   <point/>
+  </object>
+  <object id="181" name="consumable" type="spawn" x="697.5" y="554">
+   <point/>
+  </object>
+  <object id="182" name="consumable" type="spawn" x="520.5" y="636">
+   <point/>
+  </object>
+  <object id="183" name="consumable" type="spawn" x="359" y="553">
+   <point/>
+  </object>
+  <object id="184" name="consumable" type="spawn" x="344" y="777.5">
    <point/>
   </object>
  </objectgroup>
