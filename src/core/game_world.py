@@ -215,21 +215,12 @@ class GameWorld(GameScene):
         if getattr(self, 'upgrade_manager', None) and self.upgrade_manager.is_paused_for_levelup:
             self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
             return
-
+            
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 from src.screens.main_menu import MainMenuScreen
                 self.manager.change_scene(MainMenuScreen(self.manager, paused_world=self))
                 return
-            
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.shoot_timer >= 0.3:
-                    self.shoot_timer = 0
-                    if hasattr(self.player, 'shoot_sfx'):
-                        self.player.shoot_sfx.play()
-                    world_mouse = self.get_world_mouse_pos()
-                    bullet = BulletObject(self.player.position, world_mouse)
-                    self.add_entity(bullet, self.bullets)
 
     def update(self, dt):
         if not self.player.is_alive:
@@ -269,6 +260,36 @@ class GameWorld(GameScene):
         self.spawn_enemy(dt)
         self.spawn_consumable(dt)
         self.shoot_timer += dt
+        
+        mouse_buttons = pygame.mouse.get_pressed()
+        if mouse_buttons[0]:
+            cooldown = getattr(self.player, 'shoot_cooldown', 0.3)
+            if self.shoot_timer >= cooldown:
+                self.shoot_timer = 0
+                if hasattr(self.player, 'shoot_sfx'):
+                    self.player.shoot_sfx.play()
+                    
+                multishot = getattr(self.player, 'multishot', 1)
+                
+                if multishot == 1:
+                    bullet = BulletObject(self.player.position, world_mouse)
+                    self.add_entity(bullet, self.bullets)
+                else:
+                    base_direction = world_mouse - self.player.position
+                    if base_direction.length() > 0:
+                        base_angle = math.atan2(base_direction.y, base_direction.x)
+                        spread_angle = math.radians(15)
+                        
+                        start_angle = base_angle - (spread_angle * (multishot - 1) / 2)
+                        
+                        for i in range(multishot):
+                            current_angle = start_angle + (i * spread_angle)
+                            dir_vec = pygame.math.Vector2(math.cos(current_angle), math.sin(current_angle))
+                            target_pos = self.player.position + dir_vec * 100
+                            
+                            bullet = BulletObject(self.player.position, target_pos)
+                            self.add_entity(bullet, self.bullets)
+        
         self.collision_manager.update(dt)
         
         for gem in self.xp_gems:

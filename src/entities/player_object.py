@@ -31,6 +31,13 @@ class PlayerObject(CharacterObject):
         self.level = 1
         self.xp_to_next_level = 100
         self.score = 0
+        self.shoot_cooldown = 0.5
+        self.regen_timer = 0.0
+        
+    def take_damage(self, amount):
+        armor = getattr(self, 'damage_reduction', 0.0)
+        reduced_amount = amount * (1.0 - armor)
+        super().take_damage(reduced_amount)
 
     def die(self):
         self.active = False
@@ -66,20 +73,35 @@ class PlayerObject(CharacterObject):
                 self.speed = self.original_speed
 
         super().update(dt, world_mouse)
+        
         direction = world_mouse - self.position
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
+        
+        regen = getattr(self, 'health_regen', 0.0)
+        if regen > 0:
+            self.regen_timer += dt
+            if self.regen_timer >= 1.0:
+                self.heal(regen)
+                self.regen_timer = 0.0
 
     def render(self, dt):
         is_moving = self.velocity.length() > 0
         is_playing = is_moving if self.is_alive else False
-
         img = self.anim_set.update_and_get_image(dt, self.angle, is_playing=is_playing)
+        
         if img:
+            if getattr(self, 'damage_flash_timer', 0) > 0:
+                img = img.copy()
+                img.fill((150, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                
             self.sprite.image = img
 
     def gain_xp(self, amount):
         if not self.is_alive: return
-        self.current_xp += amount
+        
+        multiplier = getattr(self, 'xp_multiplier', 1.0)
+        self.current_xp += amount * multiplier
+        
         if self.current_xp >= self.xp_to_next_level:
             self.level_up()
 
