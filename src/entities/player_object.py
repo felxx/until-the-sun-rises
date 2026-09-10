@@ -30,6 +30,7 @@ class PlayerObject(CharacterObject):
         self.xp_to_next_level = 100
         self.score = 0
         self.shoot_cooldown = 0.5
+        self.regen_timer = 0.0
         
     def take_damage(self, amount):
         armor = getattr(self, 'damage_reduction', 0.0)
@@ -53,8 +54,16 @@ class PlayerObject(CharacterObject):
     def update(self, dt, world_mouse):
         if not self.is_alive: return
         super().update(dt, world_mouse)
+        
         direction = world_mouse - self.position
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
+        
+        regen = getattr(self, 'health_regen', 0.0)
+        if regen > 0:
+            self.regen_timer += dt
+            if self.regen_timer >= 1.0:
+                self.heal(regen)
+                self.regen_timer = 0.0
 
     def render(self, dt):
         is_moving = self.velocity.length() > 0
