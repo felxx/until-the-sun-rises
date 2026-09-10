@@ -14,6 +14,8 @@ class PlayerObject(CharacterObject):
         super().__init__(position, speed, max_health=max_health, damage=damage, hitbox_size=(10, 10), combat_radius=8)
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
+        self.original_speed = speed
+        self.active_buffs = {}
         
         if PlayerObject._player_anim_data is None:
             rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 9)]
@@ -44,8 +46,25 @@ class PlayerObject(CharacterObject):
         move_y = keys[pygame.K_s] - keys[pygame.K_w]
         self.velocity = pygame.math.Vector2(move_x, move_y)
 
+    def add_buff(self, buff_name, duration, apply_callback=None, remove_callback=None):
+        self.active_buffs[buff_name] = duration
+        if apply_callback and buff_name not in self.active_buffs:
+            apply_callback()
+
     def update(self, dt, world_mouse):
         if not self.is_alive: return
+
+        expired_buffs = []
+        for buff_name, duration in self.active_buffs.items():
+            self.active_buffs[buff_name] -= dt
+            if self.active_buffs[buff_name] <= 0:
+                expired_buffs.append(buff_name)
+
+        for buff_name in expired_buffs:
+            del self.active_buffs[buff_name]
+            if buff_name == "speed_boost":
+                self.speed = self.original_speed
+
         super().update(dt, world_mouse)
         direction = world_mouse - self.position
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90

@@ -3,6 +3,8 @@ import random
 import pytmx
 import pyscroll
 
+from entities.energy_drink import EnergyDrink
+from entities.medical_kit import MedicalKit
 from src.core.constants import *
 from src.core.game_scene import GameScene
 from src.core.collision_manager import CollisionManager
@@ -38,12 +40,15 @@ class GameWorld(GameScene):
         self.enemies = []
         self.bullets = []
         self.xp_gems = []
+        self.consumables = []
         self.zombie_spawn = []
+        self.consumable_spawns = []
         self.collisions = []
         
         self._setup_from_tmx()
-        
-        self.spawn_timer = 0
+
+        self.consumable_spawn_timer = 0
+        self.enemy_spawn_timer = 0
         self.shoot_timer = 0
         self.game_time = 0
         self.score = 0
@@ -128,6 +133,11 @@ class GameWorld(GameScene):
                 self.xp_gems[i].sprite.kill()
                 self.xp_gems.pop(i)
 
+        for i in range(len(self.consumables) - 1, -1, -1):
+            if not self.consumables[i].active:
+                self.consumables[i].sprite.kill()
+                self.consumables.pop(i)
+
     def add_xp(self, xp_entity):
         self.add_entity(xp_entity, self.xp_gems)
 
@@ -157,6 +167,8 @@ class GameWorld(GameScene):
                     self.all_sprites.add(self.player.sprite)
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
+                elif obj.type == "spawn" and obj.name == "consumable":
+                    self.consumable_spawns.append(pygame.math.Vector2(obj.x, obj.y))
         for obj in self.tmx_data.get_layer_by_name("collision_layer"):
             self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
@@ -164,9 +176,9 @@ class GameWorld(GameScene):
         if self.is_victorious:
             return
             
-        self.spawn_timer += dt
-        if self.spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
-            self.spawn_timer = 0
+        self.enemy_spawn_timer += dt
+        if self.enemy_spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
+            self.enemy_spawn_timer = 0
             if not self.zombie_spawn:
                 return
             spawn_pos = random.choice(self.zombie_spawn)
@@ -177,6 +189,27 @@ class GameWorld(GameScene):
                 level = 1
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
             self.add_entity(enemy, self.enemies)
+
+    def spawn_consumable(self, dt):
+        if not self.consumable_spawns:
+            return
+
+        self.consumable_spawn_timer += dt
+        if self.consumable_spawn_timer >= 15.0:
+            self.consumable_spawn_timer = 0
+
+            spawn_pos = random.choice(self.consumable_spawns)
+
+            spot_free = True
+            for item in self.consumables:
+                if item.active and item.position.distance_to(spawn_pos) < 10:
+                    spot_free = False
+                    break
+
+            if spot_free:
+                item_type = random.choice([MedicalKit, EnergyDrink])
+                new_item = item_type(spawn_pos)
+                self.add_entity(new_item, self.consumables)
 
     def handle_events(self, events):
         if getattr(self, 'upgrade_manager', None) and self.upgrade_manager.is_paused_for_levelup:
@@ -230,8 +263,11 @@ class GameWorld(GameScene):
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
+        for consumable in self.consumables: consumable.update(dt, self.player)
+
         
         self.spawn_enemy(dt)
+        self.spawn_consumable(dt)
         self.shoot_timer += dt
         self.collision_manager.update(dt)
         
