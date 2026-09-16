@@ -67,6 +67,8 @@ class GameWorld:
         self.ui_font_small = pygame.font.Font(None, 20)
         self.last_player_level = 1
         
+        self.spawned_lv4_for_levels = set()
+        
         self.is_victorious = False
 
     def _create_light_texture(self):
@@ -168,11 +170,18 @@ class GameWorld:
             if not self.zombie_spawn:
                 return
             spawn_pos = random.choice(self.zombie_spawn)
-            lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
-            if random.random() < lv2_chance:
-                level = 3 if random.random() < 0.40 else 2
+            
+            p_level = self.player.level
+            if p_level % 5 == 0 and p_level not in self.spawned_lv4_for_levels:
+                level = 4
+                self.spawned_lv4_for_levels.add(p_level)
             else:
-                level = 1
+                lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
+                if random.random() < lv2_chance:
+                    level = 3 if random.random() < 0.40 else 2
+                else:
+                    level = 1
+
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
             self.add_entity(enemy, self.enemies)
 

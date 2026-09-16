@@ -1,3 +1,4 @@
+import os
 import math
 import random
 import pygame
@@ -10,12 +11,14 @@ from src.core.resource_manager import ResourceManager
 class EnemyObject(CharacterObject):
     _walk_anim_cache = {}
     _death_anim_cache = {}
+    _attack_anim_cache = {}
     _zombie_sounds = []
     
     ENEMY_PROPERTIES = {
         1: {"speed": 100, "max_health": 5, "damage": 20, "xp_value": 10},
         2: {"speed": 80, "max_health": 10, "damage": 40, "xp_value": 25},
         3: {"speed": 65, "max_health": 15, "damage": 60, "xp_value": 50},
+        4: {"speed": 50, "max_health": 30, "damage": 80, "xp_value": 100},
     }
 
     def __init__(self, position, target, level=1):
@@ -41,8 +44,12 @@ class EnemyObject(CharacterObject):
         self._setup_sprites()
         
         self.anim_set = AnimationSet()
-        self.anim_set.add_animation("walk", Animation(self._walk_anim_cache[self.level], fps=10))
-        self.anim_set.add_animation("death", Animation(self._death_anim_cache[self.level], fps=10, loop=False))
+        if self.level in self._walk_anim_cache:
+            self.anim_set.add_animation("walk", Animation(self._walk_anim_cache[self.level], fps=10))
+        if self.level in self._death_anim_cache:
+            self.anim_set.add_animation("death", Animation(self._death_anim_cache[self.level], fps=10, loop=False))
+        if self.level in self._attack_anim_cache:
+            self.anim_set.add_animation("attack", Animation(self._attack_anim_cache[self.level], fps=10))
         
         self.frame_index = 0
         self.animation_speed = 10
@@ -56,30 +63,70 @@ class EnemyObject(CharacterObject):
                 "assets/sounds/dragon-studio-zombie-sfx-450450.mp3"
             ]
             for file_path in sound_files:
-                sound = ResourceManager.get_sound(file_path)
-                if sound:
-                    sound.set_volume(0.5)
-                    EnemyObject._zombie_sounds.append(sound)
+                if os.path.exists(file_path):
+                    sound = ResourceManager.get_sound(file_path)
+                    if sound:
+                        sound.set_volume(0.5)
+                        EnemyObject._zombie_sounds.append(sound)
 
     def _setup_sprites(self):
         if self.level not in self._walk_anim_cache:
-            if self.level == 3:
+            if self.level == 4:
+                w_paths = [f"assets/images/enemy/lv_4/walk_00{i}.png" for i in range(8)]
+                d_paths = [f"assets/images/enemy/lv_4/death_00{i}.png" for i in range(10)]
+                a_paths = [f"assets/images/enemy/lv_4/Attack1_00{i}.png" for i in range(8)]
+
+                w_size, d_size, a_size = int(self.radius * 3.5), int(self.radius * 3.5), int(self.radius * 3.5)
+                
+                w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths if os.path.exists(p)]
+                d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths if os.path.exists(p)]
+                a_frames = [ResourceManager.get_image(p, a_size) for p in a_paths if os.path.exists(p)]
+                
+                if w_frames:
+                    EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
+                if d_frames:
+                    EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
+                if a_frames:
+                    EnemyObject._attack_anim_cache[self.level] = AnimationCache(a_frames)
+
+            elif self.level == 3:
                 w_paths = [f"assets/images/enemy/lv_3/walk_00{i}.png" for i in range(9)]
                 d_paths = [f"assets/images/enemy/lv_3/death_00{i}.png" for i in range(6)]
                 w_size, d_size = int(self.radius * 1.5), int(self.radius * 3.2)
+                
+                w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths if os.path.exists(p)]
+                d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths if os.path.exists(p)]
+                
+                if w_frames:
+                    EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
+                if d_frames:
+                    EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
+
             elif self.level == 2:
                 w_paths = [f"assets/images/enemy/lv_2/walk_00{i}.png" for i in range(9)]
                 d_paths = [f"assets/images/enemy/lv_2/death_00{i}.png" for i in range(6)]
                 w_size, d_size = int(self.radius * 2.4), int(self.radius * 2.4)
+                
+                w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths if os.path.exists(p)]
+                d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths if os.path.exists(p)]
+                
+                if w_frames:
+                    EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
+                if d_frames:
+                    EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
+
             else:
                 w_paths = [f"assets/images/enemy/lv_1/walk_00{i}.png" for i in range(9)]
                 d_paths = [f"assets/images/enemy/lv_1/death_00{i}.png" for i in range(6)]
                 w_size, d_size = int(self.radius * 2.2), int(self.radius * 2.2)
-            
-            w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths]
-            d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths]
-            EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
-            EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
+                
+                w_frames = [ResourceManager.get_image(p, w_size) for p in w_paths if os.path.exists(p)]
+                d_frames = [ResourceManager.get_image(p, d_size) for p in d_paths if os.path.exists(p)]
+                
+                if w_frames:
+                    EnemyObject._walk_anim_cache[self.level] = AnimationCache(w_frames)
+                if d_frames:
+                    EnemyObject._death_anim_cache[self.level] = AnimationCache(d_frames)
 
     def die(self):
         self.velocity = pygame.math.Vector2(0, 0)
@@ -114,4 +161,5 @@ class EnemyObject(CharacterObject):
 
     def render(self, dt):
         img = self.anim_set.update_and_get_image(dt, self.angle)
-        self.sprite.image = img
+        if img:
+            self.sprite.image = img
