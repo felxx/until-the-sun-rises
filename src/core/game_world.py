@@ -67,7 +67,7 @@ class GameWorld:
         self.ui_font_small = pygame.font.Font(None, 20)
         self.last_player_level = 1
         
-        self.spawned_lv4_for_levels = set()
+        self.spawned_lv4_times = set()
         
         self.is_victorious = False
 
@@ -171,11 +171,19 @@ class GameWorld:
                 return
             spawn_pos = random.choice(self.zombie_spawn)
             
-            p_level = self.player.level
-            if p_level % 5 == 0 and p_level not in self.spawned_lv4_for_levels:
+            target_time = None
+            if self.game_time >= 540 and 540 not in self.spawned_lv4_times:
+                target_time = 540
+            elif self.game_time >= 360 and 360 not in self.spawned_lv4_times:
+                target_time = 360
+            elif self.game_time >= 180 and 180 not in self.spawned_lv4_times:
+                target_time = 180
+
+            if target_time is not None:
                 level = 4
-                self.spawned_lv4_for_levels.add(p_level)
+                self.spawned_lv4_times.add(target_time)
             else:
+
                 lv2_chance = min(0.4, 0.1 + (self.game_time / 120))
                 if random.random() < lv2_chance:
                     level = 3 if random.random() < 0.40 else 2

@@ -18,7 +18,7 @@ class EnemyObject(CharacterObject):
         1: {"speed": 100, "max_health": 5, "damage": 20, "xp_value": 10},
         2: {"speed": 80, "max_health": 10, "damage": 40, "xp_value": 25},
         3: {"speed": 65, "max_health": 15, "damage": 60, "xp_value": 50},
-        4: {"speed": 50, "max_health": 30, "damage": 80, "xp_value": 100},
+        4: {"speed": 50, "max_health": 50, "damage": 80, "xp_value": 100},
     }
 
     def __init__(self, position, target, level=1):
