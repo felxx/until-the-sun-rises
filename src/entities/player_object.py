@@ -14,6 +14,8 @@ class PlayerObject(CharacterObject):
         super().__init__(position, speed, max_health=max_health, damage=damage, hitbox_size=(10, 10), combat_radius=8)
         self.shoot_sfx = ResourceManager.get_sound("assets/sounds/shoot.wav")
         self.shoot_sfx.set_volume(0.9)
+        self.original_speed = speed
+        self.active_buffs = {}
         
         if PlayerObject._player_anim_data is None:
             rifle_paths = [f"assets/images/player/rifle{i}.png" for i in range(1, 9)]
@@ -29,6 +31,13 @@ class PlayerObject(CharacterObject):
         self.level = 1
         self.xp_to_next_level = 100
         self.score = 0
+        self.shoot_cooldown = 0.5
+        self.regen_timer = 0.0
+        
+    def take_damage(self, amount):
+        armor = getattr(self, 'damage_reduction', 0.0)
+        reduced_amount = amount * (1.0 - armor)
+        super().take_damage(reduced_amount)
 
     def die(self):
         self.active = False
@@ -44,23 +53,55 @@ class PlayerObject(CharacterObject):
         move_y = keys[pygame.K_s] - keys[pygame.K_w]
         self.velocity = pygame.math.Vector2(move_x, move_y)
 
+    def add_buff(self, buff_name, duration, apply_callback=None, remove_callback=None):
+        self.active_buffs[buff_name] = duration
+        if apply_callback and buff_name not in self.active_buffs:
+            apply_callback()
+
     def update(self, dt, world_mouse):
         if not self.is_alive: return
+
+        expired_buffs = []
+        for buff_name, duration in self.active_buffs.items():
+            self.active_buffs[buff_name] -= dt
+            if self.active_buffs[buff_name] <= 0:
+                expired_buffs.append(buff_name)
+
+        for buff_name in expired_buffs:
+            del self.active_buffs[buff_name]
+            if buff_name == "speed_boost":
+                self.speed = self.original_speed
+
         super().update(dt, world_mouse)
+        
         direction = world_mouse - self.position
         self.angle = math.degrees(math.atan2(-direction.y, direction.x)) + 90
+        
+        regen = getattr(self, 'health_regen', 0.0)
+        if regen > 0:
+            self.regen_timer += dt
+            if self.regen_timer >= 1.0:
+                self.heal(regen)
+                self.regen_timer = 0.0
 
     def render(self, dt):
         is_moving = self.velocity.length() > 0
         is_playing = is_moving if self.is_alive else False
-
         img = self.anim_set.update_and_get_image(dt, self.angle, is_playing=is_playing)
+        
         if img:
+            if getattr(self, 'damage_flash_timer', 0) > 0:
+                img = img.copy()
+                img.fill((150, 0, 0), special_flags=pygame.BLEND_RGB_ADD)
+                
             self.sprite.image = img
 
     def gain_xp(self, amount):
         if not self.is_alive: return
-        self.current_xp += amount
+        
+        multiplier = getattr(self, 'xp_multiplier', 1.0)
+        self.current_xp += amount * multiplier
+        
         if self.current_xp >= self.xp_to_next_level:
             self.level_up()
 

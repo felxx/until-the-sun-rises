@@ -3,15 +3,19 @@ import random
 import pytmx
 import pyscroll
 
+from src.entities.energy_drink import EnergyDrink
+from src.entities.medical_kit import MedicalKit
 from src.core.constants import *
+from src.core.game_scene import GameScene
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
 from src.entities.player_object import PlayerObject
 from src.entities.enemy_object import EnemyObject
 from src.entities.bullet_object import BulletObject
 
-class GameWorld:
-    def __init__(self):
+class GameWorld(GameScene):
+    def __init__(self, manager):
+        super().__init__(manager)
         self.tmx_data = pytmx.util_pygame.load_pygame("assets/maps/game-map.tmx")
         map_data = pyscroll.data.TiledMapData(self.tmx_data)
         self.map_layer = pyscroll.orthographic.BufferedRenderer(
@@ -36,12 +40,15 @@ class GameWorld:
         self.enemies = []
         self.bullets = []
         self.xp_gems = []
+        self.consumables = []
         self.zombie_spawn = []
+        self.consumable_spawns = []
         self.collisions = []
         
         self._setup_from_tmx()
-        
-        self.spawn_timer = 0
+
+        self.consumable_spawn_timer = 0
+        self.enemy_spawn_timer = 0
         self.shoot_timer = 0
         self.game_time = 0
         self.score = 0
@@ -49,7 +56,7 @@ class GameWorld:
         self.upgrade_manager = UpgradeManager(self.player)
         self.collision_manager = CollisionManager(self)
         
-        pygame.mixer.music.load("assets/sounds/ambient_wind_boosted_300.mp3")
+        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
         pygame.mixer.music.play(-1)
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -126,6 +133,11 @@ class GameWorld:
                 self.xp_gems[i].sprite.kill()
                 self.xp_gems.pop(i)
 
+        for i in range(len(self.consumables) - 1, -1, -1):
+            if not self.consumables[i].active:
+                self.consumables[i].sprite.kill()
+                self.consumables.pop(i)
+
     def add_xp(self, xp_entity):
         self.add_entity(xp_entity, self.xp_gems)
 
@@ -155,6 +167,8 @@ class GameWorld:
                     self.all_sprites.add(self.player.sprite)
                 elif obj.name == "zombie":
                     self.zombie_spawn.append(pygame.math.Vector2(obj.x, obj.y))
+                elif obj.type == "spawn" and obj.name == "consumable":
+                    self.consumable_spawns.append(pygame.math.Vector2(obj.x, obj.y))
         for obj in self.tmx_data.get_layer_by_name("collision_layer"):
             self.collisions.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
@@ -162,9 +176,9 @@ class GameWorld:
         if self.is_victorious:
             return
             
-        self.spawn_timer += dt
-        if self.spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
-            self.spawn_timer = 0
+        self.enemy_spawn_timer += dt
+        if self.enemy_spawn_timer > max(0.5, 1.5 - (self.game_time / 60)):
+            self.enemy_spawn_timer = 0
             if not self.zombie_spawn:
                 return
             spawn_pos = random.choice(self.zombie_spawn)
@@ -176,13 +190,52 @@ class GameWorld:
             enemy = EnemyObject(position=spawn_pos, target=self.player, level=level)
             self.add_entity(enemy, self.enemies)
 
-    def update(self, dt, events):
-        if not self.player.is_alive or self.is_victorious:
+    def spawn_consumable(self, dt):
+        if not self.consumable_spawns:
+            return
+
+        self.consumable_spawn_timer += dt
+        if self.consumable_spawn_timer >= 15.0:
+            self.consumable_spawn_timer = 0
+
+            spawn_pos = random.choice(self.consumable_spawns)
+
+            spot_free = True
+            for item in self.consumables:
+                if item.active and item.position.distance_to(spawn_pos) < 10:
+                    spot_free = False
+                    break
+
+            if spot_free:
+                item_type = random.choice([MedicalKit, EnergyDrink])
+                new_item = item_type(spawn_pos)
+                self.add_entity(new_item, self.consumables)
+
+    def handle_events(self, events):
+        if getattr(self, 'upgrade_manager', None) and self.upgrade_manager.is_paused_for_levelup:
+            self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
+            return
+            
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                from src.screens.main_menu import MainMenuScreen
+                self.manager.change_scene(MainMenuScreen(self.manager, paused_world=self))
+                return
+
+    def update(self, dt):
+        if not self.player.is_alive:
             pygame.mixer.music.stop()
+            from src.screens.death_screen import DeathScreen
+            self.manager.change_scene(DeathScreen(self.manager, self))
+            return
+            
+        if getattr(self, 'is_victorious', False):
+            pygame.mixer.music.stop()
+            from src.screens.score_input import ScoreInputScreen
+            self.manager.change_scene(ScoreInputScreen(self.manager, self.player.score + 5000, is_victory=True))
             return
             
         self.game_time += dt
-        
         if self.game_time >= self.DAWN_DURATION:
             self.is_victorious = True
             for enemy in self.enemies:
@@ -194,31 +247,61 @@ class GameWorld:
             self.upgrade_manager.trigger_level_up()
             
         if self.upgrade_manager.is_paused_for_levelup:
-            self.upgrade_manager.handle_events(events, self.get_screen_mouse_pos)
             return
-            
-        world_mouse = self.get_world_mouse_pos()
 
+        world_mouse = self.get_world_mouse_pos()
         self.player.update(dt, world_mouse)
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
+        for consumable in self.consumables: consumable.update(dt, self.player)
 
+        
         self.spawn_enemy(dt)
-        self.handle_shoot(dt, events, world_mouse)
+        self.spawn_consumable(dt)
+        self.shoot_timer += dt
+        
+        mouse_buttons = pygame.mouse.get_pressed()
+        if mouse_buttons[0]:
+            cooldown = getattr(self.player, 'shoot_cooldown', 0.3)
+            if self.shoot_timer >= cooldown:
+                self.shoot_timer = 0
+                if hasattr(self.player, 'shoot_sfx'):
+                    self.player.shoot_sfx.play()
+                    
+                multishot = getattr(self.player, 'multishot', 1)
+                
+                if multishot == 1:
+                    bullet = BulletObject(self.player.position, world_mouse)
+                    self.add_entity(bullet, self.bullets)
+                else:
+                    base_direction = world_mouse - self.player.position
+                    if base_direction.length() > 0:
+                        base_angle = math.atan2(base_direction.y, base_direction.x)
+                        spread_angle = math.radians(15)
+                        
+                        start_angle = base_angle - (spread_angle * (multishot - 1) / 2)
+                        
+                        for i in range(multishot):
+                            current_angle = start_angle + (i * spread_angle)
+                            dir_vec = pygame.math.Vector2(math.cos(current_angle), math.sin(current_angle))
+                            target_pos = self.player.position + dir_vec * 100
+                            
+                            bullet = BulletObject(self.player.position, target_pos)
+                            self.add_entity(bullet, self.bullets)
+        
         self.collision_manager.update(dt)
-
+        
         for gem in self.xp_gems:
             if gem.active and self.player.position.distance_to(gem.position) < 15:
                 self.player.gain_xp(gem.xp_value)
                 gem.active = False
-
+                
         self.cleanup_dead_entities()
-
         self.all_sprites.center(self.player.position)
         self.all_sprites.update(dt)
 
-    def draw(self, screen):
+    def render(self, screen):
         self.all_sprites.draw(screen)
         self._draw_fog(screen)
         self.draw_health_bar(screen)

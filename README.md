@@ -26,20 +26,18 @@ python -m src.main
 - [x] Tela de menu, com as opções de iniciar, ranking de jogadores, créditos e sair
 - [x] Menu de pause quando o jogador pressionar esc, onde terá as opções de reiniciar, configurações e sair.
 - [x] Adicionar fog nos limites do mapa e aumentar as bordas
-- [ ] Funcionalidade de Score e Leaderboard, onde deverá salvar o nome do jogador
+- [x] Funcionalidade de Score e Leaderboard, onde deverá salvar o nome do jogador
+- [x] Adição de mais habilidades de level up
+- [x] Adição de itens consumíveis (como medkits para o jogador se curar)
 - [ ] Balanceamento geral, levando em conta o tempo de 10 minutos para a vitória
 - [ ] Tela de encerramento, onde a manhã chega, os zumbis morrem e sobe os créditos do jogo
-- [ ] Inteligência artificial nos zumbis, para que eles contornem objetos.
-- [ ] Adição de mais habilidades de level up
-- [ ] Adição de itens consumíveis (como medkits para o jogador se curar)
 - [ ] Polimento visual geral
 
 ## To-do (APENAS SE SOBRAR MUITO TEMPO)
 
-- [ ] Tela de configuração para, principalmente, ajuste de áudio
+- [ ] Inteligência artificial nos zumbis, para que eles contornem objetos.
 - [ ] Adição de boss fights (3 no total: 1° no minuto 3:00, 2° no minuto 6:00 e a 3° no minuto 9:00)
 - [ ] Inimigos especiais
 - [ ] Mais opções de arsenal
 - [ ] Barris explosivos no mapa
-- [ ] Aprimoramento no sistema de dano, incluindo floating damage
 - [ ] Sistema de recarga na arma
