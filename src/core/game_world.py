@@ -7,6 +7,7 @@ from src.entities.energy_drink import EnergyDrink
 from src.entities.medical_kit import MedicalKit
 from src.core.constants import *
 from src.core.game_scene import GameScene
+from src.core.resource_manager import ResourceManager
 from src.core.collision_manager import CollisionManager
 from src.core.upgrade_manager import UpgradeManager
 from src.entities.player_object import PlayerObject
@@ -56,8 +57,9 @@ class GameWorld(GameScene):
         self.upgrade_manager = UpgradeManager(self.player)
         self.collision_manager = CollisionManager(self)
         
-        pygame.mixer.music.load("assets/sounds/ambient_wind.mp3")
+        pygame.mixer.music.load("assets/sounds/game-music.ogg")
         pygame.mixer.music.play(-1)
+        ResourceManager._current_music = None
         
         self.fog = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.DAWN_DURATION = DAWN_DURATION 
@@ -70,8 +72,8 @@ class GameWorld(GameScene):
         
         self.base_light = self._create_light_texture()
         self.light_cache = {}
-        self.ui_font = pygame.font.Font(None, 28)
-        self.ui_font_small = pygame.font.Font(None, 20)
+        self.ui_font = pygame.font.Font(MENU_FONT_PATH, 28)
+        self.ui_font_small = pygame.font.Font(MENU_FONT_PATH, 20)
         self.last_player_level = 1
         
         self.is_victorious = False
