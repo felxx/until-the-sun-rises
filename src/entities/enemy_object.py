@@ -13,9 +13,9 @@ class EnemyObject(CharacterObject):
     _zombie_sounds = []
     
     ENEMY_PROPERTIES = {
-        1: {"speed": 100, "max_health": 5, "damage": 20, "xp_value": 10},
-        2: {"speed": 80, "max_health": 10, "damage": 40, "xp_value": 25},
-        3: {"speed": 65, "max_health": 15, "damage": 60, "xp_value": 50},
+        1: {"speed": 100, "max_health": 5, "damage": 17, "xp_value": 10},
+        2: {"speed": 80, "max_health": 10, "damage": 44, "xp_value": 25},
+        3: {"speed": 65, "max_health": 15, "damage": 51, "xp_value": 50},
     }
 
     def __init__(self, position, target, level=1):

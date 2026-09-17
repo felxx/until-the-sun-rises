@@ -29,7 +29,7 @@ class UpgradeManager:
             {"name": "Tiro Múltiplo", "desc": "Dispara +1 projétil", "action": self._upgrade_multishot},
             {"name": "Mira Fatal", "desc": "Chance de Crítico (+10%)", "action": self._upgrade_crit},
             {"name": "Sabedoria", "desc": "Bônus de XP (+15%)", "action": self._upgrade_xp_boost},
-            {"name": "Regeneração", "desc": "Cura +0.5 HP / seg", "action": self._upgrade_regen},
+            {"name": "Regeneração", "desc": "Cura +0.25 HP / seg", "action": self._upgrade_regen},
             {"name": "Munição Gélida", "desc": "Tiros lentificam (15%)", "action": self._upgrade_cryo}
         ]
         
@@ -86,7 +86,7 @@ class UpgradeManager:
 
     def _upgrade_regen(self):
         current_regen = getattr(self.player, 'health_regen', 0.0)
-        self.player.health_regen = current_regen + 0.5
+        self.player.health_regen = current_regen + 0.25
 
     def _upgrade_cryo(self):
         current_slow = getattr(self.player, 'cryo_slow', 0.0)
