@@ -1,14 +1,15 @@
 import pygame
 from abc import ABC, abstractmethod
 from src.core.constants import *
+from src.core.resource_manager import ResourceManager
 
 class GameScene(ABC):
     def __init__(self, manager):
         self.manager = manager
-        self.font_death = pygame.font.Font(None, 64)
-        self.font_title = pygame.font.Font(None, 50)
-        self.font_medium = pygame.font.Font(None, 28)
-        self.font_small = pygame.font.Font(None, 20)
+        self.font_death = ResourceManager.get_font(MENU_FONT_PATH, 64)
+        self.font_title = ResourceManager.get_font(MENU_FONT_PATH, 50)
+        self.font_medium = ResourceManager.get_font(MENU_FONT_PATH, 28)
+        self.font_small = ResourceManager.get_font(MENU_FONT_PATH, 20)
 
     @abstractmethod
     def handle_events(self, events):
