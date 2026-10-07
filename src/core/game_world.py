@@ -229,19 +229,32 @@ class GameWorld(GameScene):
             self.manager.change_scene(DeathScreen(self.manager, self))
             return
             
-        if getattr(self, 'is_victorious', False):
-            pygame.mixer.music.stop()
-            from src.screens.score_input import ScoreInputScreen
-            self.manager.change_scene(ScoreInputScreen(self.manager, self.player.score + 5000, is_victory=True))
-            return
-            
-        self.game_time += dt
-        if self.game_time >= self.DAWN_DURATION:
+        if self.game_time >= self.DAWN_DURATION and not getattr(self, 'dawn_sequence_started', False):
+            self.dawn_sequence_started = True
             self.is_victorious = True
+            
             for enemy in self.enemies:
                 enemy.take_damage(9999)
-            return
-            
+                
+            pygame.mixer.music.stop()
+            try:
+                self.victory_sound = pygame.mixer.Sound("assets/sounds/6-am.mp3")
+                self.victory_sound.play()
+                self.victory_duration = self.victory_sound.get_length() + 0.5 
+            except Exception:
+                self.victory_duration = 5.0
+                
+            self.victory_timer = 0.0
+
+        if getattr(self, 'dawn_sequence_started', False):
+            self.victory_timer += dt
+            if self.victory_timer >= self.victory_duration:
+                from src.screens.credits import CreditsScreen
+                self.manager.change_scene(CreditsScreen(self.manager, final_score=self.player.score + 5000))
+                return
+        else:
+            self.game_time += dt
+
         if self.player.level > self.last_player_level:
             self.last_player_level = self.player.level
             self.upgrade_manager.trigger_level_up()
@@ -250,12 +263,13 @@ class GameWorld(GameScene):
             return
 
         world_mouse = self.get_world_mouse_pos()
+        
         self.player.update(dt, world_mouse)
+        
         for bullet in self.bullets: bullet.update(dt, world_mouse)
         for enemy in self.enemies: enemy.update(dt, world_mouse)
         for gem in self.xp_gems: gem.update(dt, world_mouse)
         for consumable in self.consumables: consumable.update(dt, self.player)
-
         
         self.spawn_enemy(dt)
         self.spawn_consumable(dt)
@@ -289,7 +303,7 @@ class GameWorld(GameScene):
                             
                             bullet = BulletObject(self.player.position, target_pos)
                             self.add_entity(bullet, self.bullets)
-        
+                            
         self.collision_manager.update(dt)
         
         for gem in self.xp_gems:
@@ -308,6 +322,17 @@ class GameWorld(GameScene):
         self.draw_xp_bar(screen)
         self.draw_score(screen)
         self.upgrade_manager.draw(screen, self.get_screen_mouse_pos)
+
+        if getattr(self, 'dawn_sequence_started', False):
+            progress = self.victory_timer / self.victory_duration
+            fade_start = 0.6
+            
+            if progress > fade_start:
+                alpha = int(((progress - fade_start) / (1.0 - fade_start)) * 255)
+                fade_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                fade_surf.set_alpha(min(255, alpha))
+                fade_surf.fill((0, 0, 0))
+                screen.blit(fade_surf, (0, 0))
 
     def _draw_fog(self, screen):
         progress = min(1.0, self.game_time / self.DAWN_DURATION)

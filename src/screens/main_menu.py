@@ -8,9 +8,9 @@ class MainMenuScreen(GameScene):
         self.paused_world = paused_world
         self.selected_index = 0
         if self.paused_world:
-            self.options = ["CONTINUAR", "NOVO JOGO", "HISTÓRICO", "CRÉDITOS", "SAIR"]
+            self.options = ["CONTINUAR", "NOVO JOGO", "PLACAR", "CRÉDITOS", "SAIR"]
         else:
-            self.options = ["JOGAR", "HISTÓRICO", "CRÉDITOS", "SAIR"]
+            self.options = ["JOGAR", "PLACAR", "CRÉDITOS", "SAIR"]
 
     def handle_events(self, events):
         for event in events:
@@ -45,7 +45,7 @@ class MainMenuScreen(GameScene):
             self.manager.change_scene(self.paused_world)
         elif opt in ("NOVO JOGO", "JOGAR"):
             self.manager.change_scene(GameWorld(self.manager))
-        elif opt == "HISTÓRICO":
+        elif opt == "PLACAR":
             self.manager.change_scene(LeaderboardScreen(self.manager, self.paused_world))
         elif opt == "CRÉDITOS":
             self.manager.change_scene(CreditsScreen(self.manager, self.paused_world))
