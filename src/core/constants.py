@@ -14,11 +14,10 @@ DARK_FILTER = (10, 10, 20)
 DAY_FILTER = (255, 255, 255)
 DAWN_DURATION = 600.0
 
-# --- UI palette (identidade pós-apocalíptica / zumbi) ---
-BLOOD_RED = (176, 30, 30)           # título, borda de hover
-DIM_TEXT = (150, 145, 140)          # botão não selecionado
-BRIGHT_TEXT = (225, 220, 210)       # botão selecionado/hover
-BACKGROUND_FALLBACK = (18, 16, 16)  # fundo sólido enquanto o vídeo do menu não existe
+BLOOD_RED = (176, 30, 30)
+DIM_TEXT = (150, 145, 140)
+BRIGHT_TEXT = (225, 220, 210) 
+BACKGROUND_FALLBACK = (18, 16, 16) 
 
 MENU_FONT_PATH = "assets/fonts/menu-font.ttf"
 
