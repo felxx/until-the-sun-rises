@@ -10,8 +10,11 @@ class CreditsScreen(GameScene):
         self.scroll_y = SCREEN_HEIGHT
         
         self.credits_lines = [
+            "Orientador:",
+            "Eduardo Cruz",
+            " ",
             "Desenvolvimento:", 
-            "Eduardo Cruz", "Andrey Jodar", "Arthur Teruel", "Igor Felipe", 
+            "Andrey Jodar", "Arthur Teruel", "Igor Felipe", 
             " ", 
             "Beta Testers:", 
             "Caio Moreira", "Camila Prado", "Geovanny Fernando", "Thales Jodar", "Victor Yamanari", "Eduardo Kaneko", "Amanda Garcia",
@@ -56,7 +59,7 @@ class CreditsScreen(GameScene):
         
         for idx, line in enumerate(self.credits_lines):
             color = (255, 255, 255)
-            if line in ("Desenvolvimento:", "Beta Testers:", "Agradecimentos Especiais:", "Músicas e Efeitos:"):
+            if line in ("Orientador:", "Desenvolvimento:", "Beta Testers:", "Agradecimentos Especiais:", "Músicas e Efeitos:"):
                 color = (255, 215, 0)
                 
             surf = self.font_medium.render(line, True, color)
